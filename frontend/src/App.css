@@ -1,0 +1,55 @@
+/* App-specific styles that build on top of index.css design system */
+
+.app-layout {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Scanner input specific states */
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Stats icon overlay */
+.stat-card__icon {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 1.5rem;
+  opacity: 0.15;
+}
+
+/* Offline status dot */
+.topbar__status-dot--offline {
+  background: var(--accent-danger);
+  box-shadow: 0 0 8px rgba(255, 75, 75, 0.4);
+}
+
+/* Empty state styling */
+.findings-empty {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
