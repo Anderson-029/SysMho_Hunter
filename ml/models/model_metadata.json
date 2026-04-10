@@ -1,0 +1,39 @@
+{
+  "trained_at": "2026-04-04T15:11:55.637310",
+  "training_samples": 3000,
+  "models": {
+    "severity_classifier": {
+      "type": "RandomForestClassifier",
+      "classes": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "informational"
+      ]
+    },
+    "vuln_scorer": {
+      "type": "GradientBoostingRegressor",
+      "output": "cvss_score_0_10"
+    },
+    "pattern_detector": {
+      "type": "SGDClassifier",
+      "classes": [
+        "xss",
+        "sqli",
+        "ssrf",
+        "rce",
+        "idor",
+        "lfi",
+        "xxe",
+        "ssti",
+        "open_redirect",
+        "other"
+      ]
+    },
+    "target_prioritizer": {
+      "type": "RandomForestClassifier",
+      "output": "priority_1_5"
+    }
+  }
+}

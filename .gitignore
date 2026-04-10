@@ -31,3 +31,19 @@ Thumbs.db
 # SysMho Hunter Runtime
 logs/
 .pids/
+
+# uv
+backend/.venv/
+backend/uv.lock
+
+# ML models (grandes, no versionar)
+ml/models/*.pkl
+ml/models/*.joblib
+ml/data/raw/
+ml/data/processed/
+
+# Pytest
+.pytest_cache/
+
+# Ollama (gestionado por ~/.ollama/)
+models_local/

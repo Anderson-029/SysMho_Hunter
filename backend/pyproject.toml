@@ -1,0 +1,47 @@
+[project]
+name = "sysmho-hunter-backend"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.10",
+    "alembic>=1.13",
+    "anthropic>=0.40",
+    "asyncpg>=0.30",
+    "fastapi>=0.115",
+    "google-genai>=1.0",
+    "httpx>=0.27",
+    "jinja2>=3.1",
+    "joblib>=1.4",
+    "numpy>=1.26",
+    "psycopg2-binary>=2.9",
+    "pydantic-settings>=2.0",
+    "python-dotenv>=1.0",
+    "rich>=13.0",
+    "scikit-learn>=1.5",
+    "sqlalchemy[asyncio]>=2.0",
+    "uvicorn[standard]>=0.30",
+    "websockets>=12.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+]
+
+[tool.ruff]
+line-length = 79
+target-version = "py312"
+# Migraciones son auto-generadas por Alembic — no se verifican
+exclude = ["migrations/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# F821: SQLAlchemy cross-model forward references son falsos positivos
+# porque las clases viven en archivos distintos y ruff no las resuelve
+per-file-ignores = { "app/models/*.py" = ["F821"] }
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
