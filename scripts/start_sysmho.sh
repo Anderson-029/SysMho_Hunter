@@ -58,10 +58,16 @@ check_command() {
 }
 
 check_port() {
-    if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null 2>&1; then
-        return 0  # Puerto está en uso
+    local port=$1
+    # Usar nc (netcat) como fallback si lsof falla
+    if command -v nc &> /dev/null; then
+        timeout 1 nc -z localhost "$port" >/dev/null 2>&1 && return 0
     fi
-    return 1  # Puerto está libre
+    # Fallback a lsof
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
 }
 
 wait_for_port() {
@@ -138,27 +144,32 @@ log_info "───────────────────────�
 log_info "1/5 POSTGRESQL"
 log_info "───────────────────────────────────────────────────────────────"
 
-# Verificar si está corriendo
-if check_port 5432; then
-    log_success "PostgreSQL ya está corriendo en puerto 5432"
-else
-    log_info "Iniciando PostgreSQL..."
-    sudo systemctl start postgresql >> "$LOG_FILE" 2>&1
-    sleep 2
-
-    if ! wait_for_port 5432 "PostgreSQL"; then
-        log_error "No se pudo iniciar PostgreSQL"
-        exit 1
-    fi
-fi
-
-# Verificar conexión
+# Verificar si está corriendo intentando conectarse
 log_info "Verificando conexión a BD..."
 if PGPASSWORD="ander123" psql -h 127.0.0.1 -U postgres -d sysmho_hunter -c "SELECT 1" >> "$LOG_FILE" 2>&1; then
-    log_success "Conexión a BD verificada"
+    log_success "PostgreSQL está conectado y funcional"
 else
-    log_error "No se pudo conectar a la BD"
-    exit 1
+    # Si no se puede conectar, intentar iniciar el servicio
+    log_warning "No se puede conectar. Intentando iniciar PostgreSQL..."
+
+    # Intentar iniciar sin contraseña (si está en sudoers)
+    if sudo -n systemctl start postgresql >> "$LOG_FILE" 2>&1; then
+        log_info "PostgreSQL iniciado"
+        sleep 3
+
+        # Reintentar conexión
+        if PGPASSWORD="ander123" psql -h 127.0.0.1 -U postgres -d sysmho_hunter -c "SELECT 1" >> "$LOG_FILE" 2>&1; then
+            log_success "PostgreSQL está conectado y funcional"
+        else
+            log_error "No se pudo conectar a PostgreSQL incluso después de iniciar"
+            log_error "Solución: ejecuta manualmente: sudo systemctl start postgresql"
+            exit 1
+        fi
+    else
+        log_error "No se puede iniciar PostgreSQL (requiere: sudo systemctl start postgresql)"
+        log_error "Ejecuta manualmente: sudo systemctl start postgresql"
+        exit 1
+    fi
 fi
 
 ################################################################################
