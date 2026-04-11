@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import router as api_router
 from app.config import settings
 from app.database import engine
+from app.security import api_key_middleware
 from app.websocket.router import router as ws_router
 
 
@@ -46,21 +47,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="SysMho Hunter",
-    description="Agente autónomo de Pentesting Web y Bug Bounty — HackerOne",
+    description="Agente autónomo de Pentesting — HackerOne",
     version="0.2.0",
     lifespan=lifespan,
+    # Docs deshabilitados en producción
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
 )
 
+# Middleware de API Key (ANTES de CORS)
+app.middleware("http")(api_key_middleware)
+
+# CORS — solo frontend autorizado
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.frontend_url,
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=[settings.frontend_url],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
 
 app.include_router(api_router, prefix="/api/v1")

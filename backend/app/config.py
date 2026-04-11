@@ -31,9 +31,14 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3.1:8b-instruct-q6_K"
 
     # Backend
-    backend_host: str = "0.0.0.0"
+    # Localhost por defecto — cambiar en producción a 0.0.0.0
+    backend_host: str = "127.0.0.1"
     backend_port: int = 8000
     debug: bool = False
+
+    # Seguridad — generar única clave en .env
+    # ej: API_KEY=tu_clave_super_secreta_aqui
+    api_key: str = ""
     secret_key: str = "cambiar_en_produccion"
 
     # Frontend
