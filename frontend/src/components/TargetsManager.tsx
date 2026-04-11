@@ -69,8 +69,9 @@ export function TargetsManager() {
 
   const loadTargets = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/targets/')
-      if (res.ok) setTargets(await res.json())
+      const { api } = await import('../api/client')
+      const data = await api.get('/targets/')
+      setTargets(data)
     } catch (err) {
       console.error('Error loading targets:', err)
     }
@@ -79,15 +80,10 @@ export function TargetsManager() {
   const handleCreateTarget = async (data: Partial<Target>) => {
     setIsLoading(true)
     try {
-      const res = await fetch('http://localhost:8000/api/v1/targets/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, scopes: [] }),
-      })
-      if (res.ok) {
-        setShowForm(false)
-        loadTargets()
-      }
+      const { api } = await import('../api/client')
+      await api.post('/targets/', { ...data, scopes: [] })
+      setShowForm(false)
+      loadTargets()
     } catch (err) {
       console.error('Error creating target:', err)
     } finally {
@@ -98,10 +94,9 @@ export function TargetsManager() {
   const handleDeleteTarget = async (id: string) => {
     if (!confirm('¿Eliminar este programa?')) return
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/targets/${id}`, {
-        method: 'DELETE',
-      })
-      if (res.ok) loadTargets()
+      const { api } = await import('../api/client')
+      await api.delete(`/targets/${id}`)
+      loadTargets()
     } catch (err) {
       console.error('Error deleting target:', err)
     }
@@ -109,11 +104,9 @@ export function TargetsManager() {
 
   const handleDeleteScope = async (targetId: string, scopeId: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/v1/targets/${targetId}/scopes/${scopeId}`,
-        { method: 'DELETE' }
-      )
-      if (res.ok) loadTargets()
+      const { api } = await import('../api/client')
+      await api.delete(`/targets/${targetId}/scopes/${scopeId}`)
+      loadTargets()
     } catch (err) {
       console.error('Error deleting scope:', err)
     }

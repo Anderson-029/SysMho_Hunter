@@ -38,24 +38,13 @@ export function ScopeImporter({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/targets/${targetId}/scopes/bulk`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            values: scopeLines,
-            scope_type: scopeType,
-            is_in_scope: isInScope,
-          }),
-        }
-      )
+      const { api } = await import('../api/client')
+      const data = await api.post(`/targets/${targetId}/scopes/bulk`, {
+        values: scopeLines,
+        scope_type: scopeType,
+        is_in_scope: isInScope,
+      })
 
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}`)
-      }
-
-      const data = await response.json()
       setStatus('success')
       setMessage(`✅ ${data.length} scopes importados exitosamente`)
       setTimeout(() => {
