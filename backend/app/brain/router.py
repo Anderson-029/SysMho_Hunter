@@ -5,8 +5,10 @@ Nivel 2: LocalLLM (Ollama Llama 3.1 8B Q6_K, ~20-40s)
 Nivel 3: CloudClient (Gemini 2.0 Flash → Claude Haiku, ~1-3s)
 """
 
+import json
 import logging
 import time
+from datetime import datetime, timezone
 
 from app.brain.cloud_client import CloudClientError, cloud_client
 from app.brain.local_llm import LocalLLMError, local_llm
@@ -14,6 +16,27 @@ from app.brain.ml_engine import ml_engine
 from app.brain.prompts import build_reason_prompt, build_report_prompt
 
 logger = logging.getLogger(__name__)
+
+
+def _log_brain_decision(
+    task_type: str,
+    level: int,
+    model: str,
+    latency_ms: int,
+    confidence: float = 0.0,
+    reason: str = "",
+) -> None:
+    """Registra decisión del cerebro en formato JSON estructurado."""
+    decision = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "task_type": task_type,
+        "brain_level": level,
+        "model_used": model,
+        "latency_ms": latency_ms,
+        "confidence": confidence,
+        "reason": reason,
+    }
+    logger.info(f"[Brain Decision] {json.dumps(decision)}")
 
 ML_CONFIDENCE_THRESHOLD = 0.85
 LOCAL_CONFIDENCE_THRESHOLD = 0.70
@@ -43,13 +66,16 @@ class BrainRouter:
             ):
                 ml_result["brain_level"] = 1
                 ml_result["model_used"] = "sklearn"
-                ml_result["total_latency_ms"] = int(
-                    (time.monotonic() - start) * 1000
-                )
+                latency_ms = int((time.monotonic() - start) * 1000)
+                ml_result["total_latency_ms"] = latency_ms
                 conf = ml_result["confidence"]
-                logger.info(
-                    f"[Brain] {task_type} → Nivel 1"
-                    f" (ML, confianza={conf:.3f})"
+                _log_brain_decision(
+                    task_type=task_type,
+                    level=1,
+                    model="sklearn",
+                    latency_ms=latency_ms,
+                    confidence=conf,
+                    reason=f"ML confidence {conf:.3f} >= {ML_CONFIDENCE_THRESHOLD}",
                 )
                 return ml_result
 
@@ -69,21 +95,55 @@ class BrainRouter:
                         llm_result["brain_level"] = 2
                         llm_result["model_used"] = local_llm.model
                         llm_result["confidence"] = confidence
-                        llm_result["total_latency_ms"] = int(
+                        total_latency = int(
                             (time.monotonic() - start) * 1000
                         )
-                        lat = llm_result["_meta"]["latency_ms"]
-                        logger.info(
-                            f"[Brain] {task_type} → Nivel 2"
-                            f" (Ollama, {lat}ms)"
+                        llm_result["total_latency_ms"] = total_latency
+                        ollama_latency = llm_result["_meta"]["latency_ms"]
+                        _log_brain_decision(
+                            task_type=task_type,
+                            level=2,
+                            model=local_llm.model,
+                            latency_ms=total_latency,
+                            confidence=confidence,
+                            reason=(
+                                f"Ollama available, confidence "
+                                f"{confidence:.3f} >= {LOCAL_CONFIDENCE_THRESHOLD}"
+                            ),
                         )
                         return llm_result
+                    else:
+                        _log_brain_decision(
+                            task_type=task_type,
+                            level=3,
+                            model="cloud",
+                            latency_ms=0,
+                            confidence=confidence,
+                            reason=(
+                                f"Ollama confidence {confidence:.3f} "
+                                f"< {LOCAL_CONFIDENCE_THRESHOLD}. "
+                                f"Escalando a Nivel 3."
+                            ),
+                        )
                 except LocalLLMError as e:
                     logger.warning(
                         f"[Brain] Nivel 2 falló: {e}. Escalando a Nivel 3."
                     )
+                    _log_brain_decision(
+                        task_type=task_type,
+                        level=3,
+                        model="cloud",
+                        latency_ms=0,
+                        reason=f"Nivel 2 error: {str(e)}",
+                    )
             else:
-                logger.debug("[Brain] Ollama no disponible. Usando Nivel 3.")
+                _log_brain_decision(
+                    task_type=task_type,
+                    level=3,
+                    model="cloud",
+                    latency_ms=0,
+                    reason="Ollama no disponible. Escalando a Nivel 3.",
+                )
 
         # Nivel 3: Cloud (siempre disponible como último recurso)
         try:
@@ -93,22 +153,31 @@ class BrainRouter:
                 prompt, expect_json=expect_json
             )
             cloud_result["brain_level"] = 3
-            cloud_result["model_used"] = cloud_result.get("_meta", {}).get(
+            model_name = cloud_result.get("_meta", {}).get(
                 "model", "cloud"
             )
+            cloud_result["model_used"] = model_name
             cloud_result["confidence"] = cloud_result.get("confidence", 0.9)
-            cloud_result["total_latency_ms"] = int(
-                (time.monotonic() - start) * 1000
-            )
-            mdl = cloud_result["model_used"]
-            lat3 = cloud_result["total_latency_ms"]
-            logger.info(
-                f"[Brain] {task_type} → Nivel 3"
-                f" ({mdl}, {lat3}ms)"
+            total_latency = int((time.monotonic() - start) * 1000)
+            cloud_result["total_latency_ms"] = total_latency
+            _log_brain_decision(
+                task_type=task_type,
+                level=3,
+                model=model_name,
+                latency_ms=total_latency,
+                confidence=cloud_result.get("confidence", 0.9),
+                reason="Cloud fallback (Nivel 1 y 2 no disponibles)",
             )
             return cloud_result
         except CloudClientError as e:
             logger.error(f"[Brain] Todos los niveles fallaron: {e}")
+            _log_brain_decision(
+                task_type=task_type,
+                level=0,
+                model="none",
+                latency_ms=int((time.monotonic() - start) * 1000),
+                reason=f"CRITICAL ERROR: todos los niveles fallaron: {str(e)}",
+            )
             return {
                 "error": str(e),
                 "brain_level": 0,

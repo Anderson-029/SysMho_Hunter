@@ -17,6 +17,26 @@
 
 ---
 
+## 🎯 Premisa Principal
+
+**SysMho Hunter debe cumplir con COHERENCIA, CONGRUENCIA, FUNCIONALIDAD, ESTABILIDAD y SEGURIDAD TOTAL.**
+
+Cada línea de código, cada decisión arquitectónica, cada feature debe adherir a estos 5 pilares:
+
+1. **Coherencia** — Código consistente, patrones uniformes, sin contradicciones
+2. **Congruencia** — Todo alineado: especificaciones, implementación, documentación
+3. **Funcionalidad** — Cada feature funciona exactamente como se define, sin edge cases no manejados
+4. **Estabilidad** — Cero crashes, manejo robusto de errores, graceful degradation
+5. **Seguridad Total** — Cero vulnerabilidades conocidas, defensa en profundidad, auditoría completa
+
+**Aplicar a TODO:**
+- ✅ Código nuevo → pasar los 5 pilares antes de merge
+- ✅ Refactoring → mantener o mejorar los 5 pilares
+- ✅ Bug fixes → nunca introducir nuevos issues en otros 4 pilares
+- ✅ Docs → estar siempre alineadas con código real
+
+---
+
 ## Reglas Críticas de Desarrollo
 
 ### Python / Backend

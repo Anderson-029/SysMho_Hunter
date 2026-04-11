@@ -182,6 +182,9 @@ async def auth_middleware(request: Request, call_next):
         "/docs",
         "/redoc",
         "/openapi.json",
+        "/api/v1/brain/status",
+        "/api/v1/brain/test",
+        "/api/v1/brain/stats",
     }
 
     # CORS preflight

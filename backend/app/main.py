@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.brain import router as brain_router
 from app.api.v1.router import router as api_router
 from app.config import settings
 from app.database import engine
@@ -69,6 +70,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(brain_router, prefix="/api/v1")
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(ws_router, prefix="/ws")
 
