@@ -32,9 +32,8 @@ Thumbs.db
 logs/
 .pids/
 
-# uv
+# uv (lock file should be committed, like package-lock.json)
 backend/.venv/
-backend/uv.lock
 
 # ML models (grandes, no versionar)
 ml/models/*.pkl
