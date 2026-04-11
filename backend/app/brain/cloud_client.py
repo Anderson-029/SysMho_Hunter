@@ -1,7 +1,7 @@
 """
 CloudClient — Nivel 3 del cerebro híbrido.
-Primario: Gemini 2.0 Flash
-Fallback: Claude Haiku
+Proveedor: Gemini 2.0 Flash (google-genai).
+Si la cuota gratuita se agota, retorna error estructurado sin crashear.
 """
 
 import json
@@ -21,43 +21,49 @@ class CloudClientError(Exception):
 class CloudClient:
     def __init__(self):
         self._gemini = None
-        self._anthropic = None
 
     def _get_gemini(self):
         if self._gemini is None:
             if not settings.gemini_api_key or "tu_" in settings.gemini_api_key:
-                raise CloudClientError("GEMINI_API_KEY no configurada")
+                raise CloudClientError("GEMINI_API_KEY no configurada en .env")
             from google import genai
 
-            client = genai.Client(api_key=settings.gemini_api_key)
-            self._gemini = client
+            self._gemini = genai.Client(api_key=settings.gemini_api_key)
         return self._gemini
-
-    def _get_anthropic(self):
-        if self._anthropic is None:
-            if (
-                not settings.anthropic_api_key
-                or "tu_" in settings.anthropic_api_key
-            ):
-                raise CloudClientError("ANTHROPIC_API_KEY no configurada")
-            import anthropic
-
-            self._anthropic = anthropic.AsyncAnthropic(
-                api_key=settings.anthropic_api_key
-            )
-        return self._anthropic
 
     async def complete(
         self, prompt: str, max_tokens: int = 1024, expect_json: bool = True
     ) -> dict:
-        """Intenta Gemini primero, luego Claude como fallback."""
+        """Llama a Gemini 2.0 Flash. Maneja errores de cuota sin crashear."""
         try:
             return await self._gemini_complete(prompt, max_tokens, expect_json)
+        except CloudClientError:
+            raise
         except Exception as e:
-            logger.warning(
-                f"[CloudClient] Gemini falló: {e}. Usando Claude fallback."
-            )
-            return await self._claude_complete(prompt, max_tokens, expect_json)
+            err_str = str(e).lower()
+            if any(
+                k in err_str
+                for k in ("quota", "rate", "429", "resource_exhausted")
+            ):
+                logger.warning("[CloudClient] Cuota de Gemini agotada.")
+                return {
+                    "thought": (
+                        "Cuota de Gemini agotada. "
+                        "Reintenta en unos minutos."
+                    ),
+                    "action": "retry_later",
+                    "risk_level": "low",
+                    "confidence": 0.0,
+                    "brain_level": 3,
+                    "model_used": "gemini-2.0-flash",
+                    "_meta": {
+                        "model": "gemini-2.0-flash",
+                        "latency_ms": 0,
+                        "quota_exceeded": True,
+                    },
+                }
+            logger.error(f"[CloudClient] Error Gemini: {e}")
+            raise CloudClientError(f"Gemini error: {e}") from e
 
     async def _gemini_complete(
         self, prompt: str, max_tokens: int, expect_json: bool
@@ -76,9 +82,9 @@ class CloudClient:
                 config=types.GenerateContentConfig(
                     max_output_tokens=max_tokens,
                     temperature=0.1,
-                    response_mime_type="application/json"
-                    if expect_json
-                    else "text/plain",
+                    response_mime_type=(
+                        "application/json" if expect_json else "text/plain"
+                    ),
                 ),
             )
             return response.text
@@ -94,43 +100,15 @@ class CloudClient:
         }
         return result
 
-    async def _claude_complete(
-        self, prompt: str, max_tokens: int, expect_json: bool
-    ) -> dict:
-        start = time.monotonic()
-        client = self._get_anthropic()
-
-        system = (
-            "You are SysMho Hunter, an expert pentesting AI agent."
-            " Always respond with valid JSON when asked."
-        )
-        response = await client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.content[0].text
-        latency_ms = int((time.monotonic() - start) * 1000)
-
-        result = self._parse_response(text, expect_json)
-        result["_meta"] = {
-            "model": "claude-haiku-4-5-20251001",
-            "latency_ms": latency_ms,
-        }
-        return result
-
     def _parse_response(self, text: str, expect_json: bool) -> dict:
         if not expect_json:
             return {"text": text, "confidence": 0.9}
         clean = text.strip()
-        # Remover bloques de código markdown
         clean = re.sub(r"^```(?:json)?\s*", "", clean, flags=re.MULTILINE)
         clean = re.sub(r"```\s*$", "", clean, flags=re.MULTILINE).strip()
         try:
             return json.loads(clean)
         except json.JSONDecodeError:
-            # Último intento: extraer JSON con regex
             match = re.search(r"\{.*\}", clean, re.DOTALL)
             if match:
                 return json.loads(match.group())

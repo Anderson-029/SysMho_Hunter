@@ -25,7 +25,6 @@ class Settings(BaseSettings):
 
     # APIs cloud
     gemini_api_key: str = ""
-    anthropic_api_key: str = ""
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
@@ -39,10 +38,6 @@ class Settings(BaseSettings):
 
     # Frontend
     frontend_url: str = "http://localhost:5173"
-
-    # HackerOne
-    h1_api_token: str = ""
-    h1_username: str = ""
 
     @property
     def database_url(self) -> str:

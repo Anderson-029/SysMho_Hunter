@@ -11,7 +11,7 @@
 
 - **Backend:** FastAPI + SQLAlchemy async + asyncpg + PostgreSQL, gestionado con `uv`
 - **Frontend:** React 19 + Vite + TypeScript + Tailwind CSS + Zustand
-- **Cerebro:** Híbrido 3 niveles — scikit-learn → Ollama Llama 3.1 8B Q6_K → Gemini 2.0 Flash / Claude Haiku
+- **Cerebro:** Híbrido 3 niveles — scikit-learn → Ollama Llama 3.1 8B Q6_K → Gemini 2.0 Flash
 - **Arsenal:** 19 herramientas CLI (nmap, nuclei, ffuf, sqlmap, subfinder, amass, etc.)
 - **BD:** PostgreSQL, 12 tablas con UUID como PKs
 
@@ -84,7 +84,7 @@ bash scripts/seed_db.sh        # sembrar agent_config inicial
 ```
 Nivel 1: MLEngine (scikit-learn, <10ms)          → classify_severity, score_vuln, prioritize
 Nivel 2: LocalLLM (Llama 3.1 8B Q6_K, Ollama)   → detect_patterns, analyze_response
-Nivel 3: CloudClient (Gemini 2.0 → Claude Haiku) → draft_report, tareas complejas
+Nivel 3: CloudClient (Gemini 2.0 Flash) → draft_report, tareas complejas
 ```
 
 Umbrales configurables en BD (`agent_config`):

@@ -5,6 +5,12 @@ export interface Target {
   h1_program_slug?: string
   status: string
   priority: number
+  platform?: string
+  program_url?: string
+  rules_md?: string
+  bounty_table?: Record<string, string>
+  out_of_scope_notes?: string
+  safe_harbor: boolean
   scopes: Scope[]
   created_at: string
 }

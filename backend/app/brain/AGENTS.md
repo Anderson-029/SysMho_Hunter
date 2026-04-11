@@ -19,9 +19,9 @@ BrainRouter.route(task_type, input_data)
     │
     ▼ (si Ollama no disponible o confianza < 0.70)
 [Nivel 3] CloudClient
-    Primario: Gemini 2.0 Flash (google-genai)
-    Fallback: Claude Haiku (anthropic)
-    Tareas LLM_TASKS: draft_report, analyze_response (fallback), cualquier tarea compleja
+    Proveedor: Gemini 2.0 Flash (google-genai)
+    Si cuota agotada → retorna error estructurado, sin crash
+    Tareas LLM_TASKS: draft_report, analyze_response, cualquier tarea compleja
 ```
 
 ## Tareas por Categoría

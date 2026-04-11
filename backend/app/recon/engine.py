@@ -32,10 +32,13 @@ class ReconEngine:
         scope: list[str],
         phases: list[str] | None = None,
         db: AsyncSession | None = None,
+        target_id: str | None = None,
     ) -> dict:
         """
         Ejecuta todas las fases de reconocimiento en orden.
         Retorna un dict con los findings agrupados por fase.
+
+        target_id: UUID del target en BD (para validación mejorada)
         """
         phases = phases or DEFAULT_PHASES
         all_findings: dict[str, list[dict]] = {}
@@ -51,7 +54,9 @@ class ReconEngine:
             logger.info(
                 f"[Recon] Fase '{phase}': {len(tools)} tools disponibles."
             )
-            phase_findings = await self._run_phase(tools, target, scope, phase)
+            phase_findings = await self._run_phase(
+                tools, target, scope, phase, target_id, db
+            )
             all_findings[phase] = phase_findings
 
         return all_findings
@@ -62,12 +67,17 @@ class ReconEngine:
         target: str,
         scope: list[str],
         phase: str,
+        target_id: str | None = None,
+        db: AsyncSession | None = None,
     ) -> list[dict]:
         """Ejecuta todas las tools de una fase en paralelo.
 
         Respeta el semáforo de concurrencia máxima.
         """
-        tasks = [self._run_tool(tool, target, scope) for tool in tools]
+        tasks = [
+            self._run_tool(tool, target, scope, target_id, db)
+            for tool in tools
+        ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         findings = []
@@ -86,9 +96,18 @@ class ReconEngine:
 
         return findings
 
-    async def _run_tool(self, tool, target: str, scope: list[str]):
+    async def _run_tool(
+        self,
+        tool,
+        target: str,
+        scope: list[str],
+        target_id: str | None = None,
+        db: AsyncSession | None = None,
+    ):
         async with self._semaphore:
-            return await tool.safe_run(target, scope)
+            return await tool.safe_run(
+                target, scope, target_id=target_id, db=db
+            )
 
     def get_arsenal_status(self) -> dict:
         """Retorna estado de todas las herramientas registradas."""

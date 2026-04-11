@@ -5,7 +5,7 @@
 **SysMho Hunter v0.2.0 — Agente Autónomo de Pentesting y Bug Bounty.**
 
 Stack: Python 3.12 + FastAPI + PostgreSQL + React/Vite + uv
-Cerebro: Híbrido 3 niveles — scikit-learn → Llama 3.1 8B (Ollama) → Gemini 2.0 Flash / Claude Haiku
+Cerebro: Híbrido 3 niveles — scikit-learn → Llama 3.1 8B (Ollama) → Gemini 2.0 Flash
 Arsenal: nmap, ffuf, feroxbuster, nuclei, subfinder, amass + herramientas Kali/Parrot
 Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e integración con HackerOne.
 
@@ -46,7 +46,7 @@ Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e inte
 ```
 Nivel 1: MLEngine (scikit-learn, <10ms)          → classify_severity, score_vuln, prioritize
 Nivel 2: LocalLLM (Llama 3.1 8B Q6_K, Ollama)   → detect_patterns, analyze_response
-Nivel 3: CloudClient (Gemini 2.0 → Claude Haiku) → draft_report, tareas complejas
+Nivel 3: CloudClient (Gemini 2.0 Flash) → draft_report, tareas complejas
 ```
 
 Regla: cada nivel intenta → si confianza < umbral → delega al siguiente.

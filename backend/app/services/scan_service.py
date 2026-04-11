@@ -66,6 +66,7 @@ class ScanService:
                     target=target_url,
                     scope=scope_values or [target_url],
                     db=db,
+                    target_id=str(scan.target_id),
                 )
 
                 # Guardar hallazgos de recon como findings

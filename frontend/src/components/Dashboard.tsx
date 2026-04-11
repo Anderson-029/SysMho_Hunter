@@ -21,6 +21,7 @@ import { ScanMonitor } from './ScanMonitor'
 import { FindingsList } from './FindingsList'
 import { PendingActions } from './PendingActions'
 import { LiveLogs } from './LiveLogs'
+import { TargetsManager } from './TargetsManager'
 
 /* ------------------------------------------------------------------ */
 /* Componente de número animado                                         */
@@ -49,7 +50,7 @@ function AnimatedNumber({ value }: { value: number }) {
 /* ------------------------------------------------------------------ */
 /* Tipos de tabs                                                        */
 /* ------------------------------------------------------------------ */
-type TabId = 'scans' | 'findings' | 'actions' | 'logs'
+type TabId = 'targets' | 'scans' | 'findings' | 'actions' | 'logs'
 
 const SEV_COLOR: Record<string, string> = {
   critical: '#ff3366',
@@ -76,7 +77,7 @@ export function Dashboard() {
     wsConnected,
   } = useScanStore()
 
-  const [activeTab, setActiveTab] = useState<TabId>('scans')
+  const [activeTab, setActiveTab] = useState<TabId>('targets')
 
   useEffect(() => {
     fetchTargets()
@@ -137,6 +138,7 @@ export function Dashboard() {
 
   /* Tabs */
   const TABS: { id: TabId; label: string; Icon: React.ElementType; badge?: number }[] = [
+    { id: 'targets', label: 'PROGRAMAS', Icon: Target },
     { id: 'scans', label: 'SCANS', Icon: Activity },
     { id: 'findings', label: 'FINDINGS', Icon: Bug, badge: findings.length },
     { id: 'actions', label: 'ACCIONES', Icon: Zap, badge: pendingActions.length },
@@ -340,6 +342,7 @@ export function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
+          {activeTab === 'targets' && <TargetsManager />}
           {activeTab === 'scans' && <ScanMonitor />}
           {activeTab === 'findings' && <FindingsList />}
           {activeTab === 'actions' && <PendingActions />}
