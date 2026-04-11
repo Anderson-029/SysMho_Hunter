@@ -3,6 +3,7 @@
  */
 
 const API_BASE = 'http://localhost:8000/api/v1'
+export const WS_URL = 'ws://localhost:8000/ws/live'
 
 // API Key — obtener desde import.meta.env (configurable en .env del frontend)
 const API_KEY = import.meta.env.VITE_API_KEY || 'dev-api-key-change-in-production'

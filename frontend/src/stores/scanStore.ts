@@ -29,24 +29,32 @@ export const useScanStore = create<ScanStore>((set, get) => ({
   wsConnected: false,
 
   fetchTargets: async () => {
-    const res = await api.get('/targets/')
-    set({ targets: res.data })
+    try {
+      const res = await api.get('/targets/')
+      set({ targets: res ?? [] })
+    } catch { set({ targets: [] }) }
   },
 
   fetchScans: async () => {
-    const res = await api.get('/scans/')
-    set({ scans: res.data })
+    try {
+      const res = await api.get('/scans/')
+      set({ scans: res ?? [] })
+    } catch { set({ scans: [] }) }
   },
 
   fetchFindings: async (targetId?: string) => {
-    const url = targetId ? `/findings/?target_id=${targetId}` : '/findings/'
-    const res = await api.get(url)
-    set({ findings: res.data })
+    try {
+      const url = targetId ? `/findings/?target_id=${targetId}` : '/findings/'
+      const res = await api.get(url)
+      set({ findings: res ?? [] })
+    } catch { set({ findings: [] }) }
   },
 
   fetchPendingActions: async () => {
-    const res = await api.get('/actions/')
-    set({ pendingActions: res.data })
+    try {
+      const res = await api.get('/actions/')
+      set({ pendingActions: res ?? [] })
+    } catch { set({ pendingActions: [] }) }
   },
 
   startScan: async (targetId: string, scanType = 'full') => {

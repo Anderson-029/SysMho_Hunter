@@ -103,16 +103,17 @@ log_info "Log de esta sesión: $LOG_FILE"
 echo ""
 
 ################################################################################
-# 1. FRONTEND
+# 1. FRONTEND — Se mantiene vivo para mostrar pantalla de "desconectado"
 ################################################################################
 
 log_info "───────────────────────────────────────────────────────────────"
 log_info "1/5 FRONTEND (React + Vite)"
 log_info "───────────────────────────────────────────────────────────────"
 
-# Matar por puerto (npm dev usa 5173)
-pkill -f "npm run dev" -9 2>/dev/null || true
-kill_process "npm/Vite" "" 5173
+# El frontend NO se mata. Se queda corriendo y mostrará el estado
+# OFFLINE automáticamente cuando el backend y WebSocket dejen de responder.
+# Esto evita cerrar el navegador del usuario con todas sus pestañas.
+log_success "Frontend se mantiene activo — mostrará estado OFFLINE en el dashboard"
 
 ################################################################################
 # 2. BACKEND
@@ -180,25 +181,20 @@ if [ "$PYTHON_PROCS" -gt 0 ]; then
     sleep 1
 fi
 
-# Buscar procesos Node que puedan estar zombies
-NODE_PROCS=$(pgrep -f "node" | wc -l)
-if [ "$NODE_PROCS" -gt 0 ]; then
-    log_warning "Encontrados $NODE_PROCS procesos Node"
-    log_info "Limpiando procesos Node relacionados con SysMho..."
-    pkill -f "vite\|npm" -9 2>/dev/null || true
-    sleep 1
-fi
+# No se matan procesos Node/Vite — el frontend se mantiene activo
+# para mostrar el estado OFFLINE en el dashboard
 
-# Verificar que no hay procesos en los puertos
-log_info "Verificando puertos..."
+# Verificar que no hay procesos zombie en los puertos del backend
+log_info "Verificando puertos backend..."
 
-for port in 5173 8000 11434; do
+for port in 8000 11434; do
     if lsof -Pi :$port -sTCP:LISTEN -t 2>/dev/null > /dev/null; then
         log_warning "Puerto $port todavía está en uso, forzando cierre..."
         lsof -ti :$port 2>/dev/null | xargs kill -9 2>/dev/null || true
         sleep 1
     fi
 done
+# Puerto 5173 (frontend) se omite intencionalmente
 
 # Limpiar archivo de PIDs
 if [ -f "$PID_FILE" ]; then
@@ -218,12 +214,8 @@ log_info "───────────────────────�
 
 echo ""
 
-# Verificar Frontend
-if lsof -Pi :5173 -sTCP:LISTEN -t >/dev/null 2>&1; then
-    log_error "Frontend aún está corriendo en puerto 5173 ✗"
-else
-    log_success "Frontend detenido ✓"
-fi
+# Frontend: se mantiene activo intencionalmente
+log_success "Frontend activo — muestra estado OFFLINE en el dashboard ✓"
 
 # Verificar Backend
 if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
@@ -258,7 +250,7 @@ log_info "═══════════════════════�
 
 echo ""
 echo -e "${YELLOW}Verificación final:${NC}"
-echo -e "  ${GREEN}✓${NC} Frontend detenido (puerto 5173)"
+echo -e "  ${YELLOW}◈${NC} Frontend activo — mostrando estado OFFLINE"
 echo -e "  ${GREEN}✓${NC} Backend detenido (puerto 8000)"
 echo -e "  ${GREEN}✓${NC} Ollama detenido (puerto 11434)"
 echo -e "  ${GREEN}✓${NC} PostgreSQL detenido"
