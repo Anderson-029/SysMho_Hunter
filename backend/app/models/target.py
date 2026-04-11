@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -34,10 +35,40 @@ class Target(Base):
         String(50)
     )  # hackerone, bugcrowd, intigriti, yeswehack
     program_url: Mapped[str | None] = mapped_column(String(500))
+
+    # Texto de bienvenida/introducción del programa
+    introduction_md: Mapped[str | None] = mapped_column(Text)
+
+    # Reglas de engagement y políticas
     rules_md: Mapped[str | None] = mapped_column(Text)
-    bounty_table: Mapped[dict | None] = mapped_column(JSON)
+    disclosure_policy: Mapped[str | None] = mapped_column(Text)
     out_of_scope_notes: Mapped[str | None] = mapped_column(Text)
     safe_harbor: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Badges y features del programa (JSON list)
+    # ej: ["fast_payment","gold_safe_harbor","managed_by_h1"]
+    program_features: Mapped[list | None] = mapped_column(JSON)
+    # ej: ["Managed by HackerOne","Collaboration Enabled"]
+    program_tags: Mapped[list | None] = mapped_column(JSON)
+
+    # Métricas de respuesta del programa (en horas)
+    response_efficiency_pct: Mapped[float | None] = mapped_column(Float)
+    avg_response_hours: Mapped[float | None] = mapped_column(Float)
+    avg_triage_hours: Mapped[float | None] = mapped_column(Float)
+    avg_bounty_hours: Mapped[float | None] = mapped_column(Float)
+    avg_resolution_hours: Mapped[float | None] = mapped_column(Float)
+
+    # Recompensas estructuradas por tiers (Primary / Secondary)
+    # ej: {"primary": {"low": {"min": 200, "max": 350}}}
+    bounty_tiers: Mapped[dict | None] = mapped_column(JSON)
+
+    # Campaña activa del programa (si aplica)
+    # ej: {"end_date": "2026-04-23", "bounty_multipliers": {"critical": 2}}
+    active_campaign: Mapped[dict | None] = mapped_column(JSON)
+
+    # Tipos de vulnerabilidades priorizadas
+    # ej: ["RCE","Auth Bypass","SQLi","SSRF","XSS"]
+    focus_areas: Mapped[list | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -70,6 +101,7 @@ class Scope(Base):
     )  # domain|ip|cidr|url|wildcard
     value: Mapped[str] = mapped_column(String(500), nullable=False)
     is_in_scope: Mapped[bool] = mapped_column(Boolean, default=True)
+    tier: Mapped[str | None] = mapped_column(String(20))  # primary|secondary
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
