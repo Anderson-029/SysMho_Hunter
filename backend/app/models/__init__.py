@@ -5,6 +5,7 @@ from app.models.log import AgentLog, BrainReasoning
 from app.models.report import Report, ReportFinding
 from app.models.scan import Scan, ScanTask
 from app.models.target import Scope, Target
+from app.models.user import User
 
 __all__ = [
     "Target",
@@ -19,4 +20,5 @@ __all__ = [
     "AgentLog",
     "BrainReasoning",
     "AgentConfig",
+    "User",
 ]

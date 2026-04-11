@@ -8,7 +8,9 @@ import {
   Zap,
   Wifi,
   WifiOff,
+  LogOut,
 } from 'lucide-react'
+import { useAuthStore } from '../stores/authStore'
 import {
   PieChart,
   Pie,
@@ -64,6 +66,7 @@ const SEV_COLOR: Record<string, string> = {
 /* Dashboard principal                                                  */
 /* ------------------------------------------------------------------ */
 export function Dashboard() {
+  const { user, logout } = useAuthStore()
   const {
     targets,
     scans,
@@ -78,6 +81,11 @@ export function Dashboard() {
   } = useScanStore()
 
   const [activeTab, setActiveTab] = useState<TabId>('targets')
+
+  const handleLogout = async () => {
+    await logout()
+    // AuthGuard se encargará de re-renderizar al cambiar isAuthenticated
+  }
 
   useEffect(() => {
     fetchTargets()
@@ -168,15 +176,38 @@ export function Dashboard() {
               v0.2.0
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            {wsConnected ? (
-              <Wifi size={13} style={{ color: '#00ff88' }} />
-            ) : (
-              <WifiOff size={13} style={{ color: '#ff3366' }} />
+          <div className="flex items-center gap-4">
+            {/* WS Status */}
+            <div className="flex items-center gap-1.5 text-xs">
+              {wsConnected ? (
+                <Wifi size={13} style={{ color: '#00ff88' }} />
+              ) : (
+                <WifiOff size={13} style={{ color: '#ff3366' }} />
+              )}
+              <span style={{ color: wsConnected ? '#00ff88' : '#ff3366' }}>
+                {wsConnected ? 'LIVE' : 'OFFLINE'}
+              </span>
+            </div>
+
+            {/* User + Logout */}
+            {user && (
+              <div className="flex items-center gap-3 pl-4 border-l" style={{ borderColor: '#1f2937' }}>
+                <span className="text-xs" style={{ color: '#9ca3af' }}>
+                  {user.username}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-opacity-80 transition"
+                  style={{
+                    backgroundColor: 'rgba(255, 51, 102, 0.1)',
+                    color: '#ff3366',
+                  }}
+                  title="Logout"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
             )}
-            <span style={{ color: wsConnected ? '#00ff88' : '#ff3366' }}>
-              {wsConnected ? 'LIVE' : 'OFFLINE'}
-            </span>
           </div>
         </div>
       </div>

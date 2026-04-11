@@ -1,62 +1,59 @@
 /**
- * API Client — Incluye API Key en todos los requests
+ * API Client — axios + interceptores para JWT/API Key
  */
 
-const API_BASE = 'http://localhost:8000/api/v1'
-export const WS_URL = 'ws://localhost:8000/ws/live'
+import axios from 'axios'
+import { useAuthStore } from '../stores/authStore'
 
-// API Key — obtener desde import.meta.env (configurable en .env del frontend)
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 const API_KEY = import.meta.env.VITE_API_KEY || 'dev-api-key-change-in-production'
 
-interface FetchOptions extends RequestInit {
-  body?: any
-}
+export const WS_URL = `${API_BASE.replace('http://', 'ws://').replace('https://', 'wss://')}/ws/live`
 
-/**
- * Fetch wrapper que incluye header X-API-Key en todos los requests
- */
-export async function apiCall(
-  endpoint: string,
-  options: FetchOptions = {}
-): Promise<any> {
-  const url = `${API_BASE}${endpoint}`
+const axiosInstance = axios.create({
+  baseURL: `${API_BASE}/api/v1`,
+  timeout: 30000,
+})
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-API-Key': API_KEY,
-    ...(options.headers as Record<string, string>),
+// Request: inyectar Bearer token o API Key
+axiosInstance.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  } else {
+    config.headers['X-API-Key'] = API_KEY
   }
+  return config
+})
 
-  const config: RequestInit = {
-    ...options,
-    headers,
+// Response: manejar 401 → refresh → reintentar
+axiosInstance.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const original = error.config
+    if (error.response?.status !== 401 || original._retry) {
+      return Promise.reject(error)
+    }
+    original._retry = true
+    try {
+      await useAuthStore.getState().refreshTokens()
+      return axiosInstance(original)
+    } catch {
+      useAuthStore.getState().logout()
+      return Promise.reject(error)
+    }
   }
+)
 
-  if (options.body && typeof options.body !== 'string') {
-    config.body = JSON.stringify(options.body)
-  }
-
-  const response = await fetch(url, config)
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || `API Error: ${response.status}`)
-  }
-
-  return response.json().catch(() => null)
-}
-
-// Métodos HTTP helper
 export const api = {
   get: (endpoint: string) =>
-    apiCall(endpoint, { method: 'GET' }),
-
-  post: (endpoint: string, body: any) =>
-    apiCall(endpoint, { method: 'POST', body }),
-
-  put: (endpoint: string, body: any) =>
-    apiCall(endpoint, { method: 'PUT', body }),
-
+    axiosInstance.get(endpoint).then((r) => r.data),
+  post: (endpoint: string, body: unknown) =>
+    axiosInstance.post(endpoint, body).then((r) => r.data),
+  put: (endpoint: string, body: unknown) =>
+    axiosInstance.put(endpoint, body).then((r) => r.data),
   delete: (endpoint: string) =>
-    apiCall(endpoint, { method: 'DELETE' }),
+    axiosInstance.delete(endpoint).then((r) => r.data),
 }
+
+export default axiosInstance

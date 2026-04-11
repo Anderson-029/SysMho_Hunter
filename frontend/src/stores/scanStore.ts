@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { api, WS_URL } from '../api/client'
+import { useAuthStore } from './authStore'
 import type { Scan, AgentLog, Finding, PendingAction, Target } from '../types'
 
 interface ScanStore {
@@ -68,7 +69,16 @@ export const useScanStore = create<ScanStore>((set, get) => ({
   },
 
   connectWebSocket: () => {
-    const ws = new WebSocket(WS_URL)
+    const authStore = useAuthStore.getState()
+    const token = authStore.accessToken
+
+    // Construir URL con token si existe
+    let wsUrl = WS_URL
+    if (token) {
+      wsUrl = `${WS_URL}?token=${encodeURIComponent(token)}`
+    }
+
+    const ws = new WebSocket(wsUrl)
     ws.onopen = () => set({ wsConnected: true })
     ws.onclose = () => {
       set({ wsConnected: false })

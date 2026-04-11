@@ -1,7 +1,12 @@
+import { AuthGuard } from './components/auth/AuthGuard'
 import { Dashboard } from './components/Dashboard'
 
 function App() {
-  return <Dashboard />
+  return (
+    <AuthGuard>
+      <Dashboard />
+    </AuthGuard>
+  )
 }
 
 export default App

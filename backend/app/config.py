@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     api_key: str = ""
     secret_key: str = "cambiar_en_produccion"
 
+    # JWT
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
     # Frontend
     frontend_url: str = "http://localhost:5173"
 

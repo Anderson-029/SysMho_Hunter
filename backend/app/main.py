@@ -7,10 +7,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.auth import router as auth_router
 from app.api.v1.router import router as api_router
 from app.config import settings
 from app.database import engine
-from app.security import api_key_middleware
+from app.security import auth_middleware
 from app.websocket.router import router as ws_router
 
 
@@ -55,18 +56,19 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None,
 )
 
-# Middleware de API Key (ANTES de CORS)
-app.middleware("http")(api_key_middleware)
+# Middleware de autenticación dual (API Key OR JWT)
+app.middleware("http")(auth_middleware)
 
 # CORS — solo frontend autorizado
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
+app.include_router(auth_router)
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(ws_router, prefix="/ws")
 

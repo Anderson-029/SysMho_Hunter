@@ -1,0 +1,241 @@
+.login-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--cyber-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 48px 32px;
+  background-color: var(--cyber-surface);
+  border: 1px solid var(--cyber-border);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
+}
+
+/* Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-logo {
+  font-size: 48px;
+  color: var(--cyber-green);
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin: 8px 0;
+  letter-spacing: 2px;
+}
+
+.login-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 12px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: 8px;
+  padding: 0 12px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--cyber-border);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper:hover {
+  border-color: var(--cyber-green);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.1);
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--cyber-green);
+  background-color: rgba(0, 255, 136, 0.05);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.15);
+}
+
+.input-wrapper svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.input-wrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e5e7eb;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+.input-wrapper input::placeholder {
+  color: #6b7280;
+}
+
+.input-wrapper input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-password {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-password:hover {
+  color: var(--cyber-green);
+}
+
+/* Error message */
+.error-message {
+  padding: 12px 12px;
+  background-color: rgba(255, 51, 102, 0.1);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 6px;
+  color: var(--cyber-red);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Submit button */
+.login-button {
+  padding: 14px 16px;
+  background-color: var(--cyber-green);
+  color: var(--cyber-bg);
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: #00dd77;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(10, 14, 26, 0.3);
+  border-top-color: var(--cyber-bg);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Footer */
+.login-footer {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--cyber-border);
+  color: #6b7280;
+  font-size: 11px;
+}
+
+/* Background grid animation */
+.background-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(
+    rgba(0, 255, 136, 0.03) 1px,
+    transparent 1px
+  ),
+  linear-gradient(
+    90deg,
+    rgba(0, 255, 136, 0.03) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+  animation: gridShift 20s linear infinite;
+}
+
+@keyframes gridShift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(20px, 20px);
+  }
+}

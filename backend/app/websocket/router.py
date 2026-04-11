@@ -1,16 +1,18 @@
 """
 WebSocket para stream de logs en tiempo real.
-El frontend se conecta a /ws/live para recibir AgentLog en tiempo real.
+El frontend se conecta a /ws/live?token=<jwt> para recibir AgentLog.
 """
 
 import asyncio
 import json
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from sqlalchemy import select
 
+from app.config import settings
 from app.database import AsyncSessionLocal
 from app.models.log import AgentLog
+from app.security import decode_token
 
 router = APIRouter()
 
@@ -43,6 +45,33 @@ async def broadcast_log(log: AgentLog) -> None:
 
 @router.websocket("/live")
 async def websocket_live(websocket: WebSocket):
+    # Extraer token del query param
+    token = websocket.query_params.get("token")
+    api_key = websocket.headers.get("X-API-Key")
+
+    # Validar autenticación
+    auth_ok = False
+
+    # Opción 1: JWT token en query param
+    if token:
+        try:
+            payload = decode_token(token)
+            if payload.get("type") == "access":
+                auth_ok = True
+        except Exception:
+            pass
+
+    # Opción 2: API Key en header
+    if not auth_ok and api_key == settings.api_key:
+        auth_ok = True
+
+    if not auth_ok:
+        await websocket.close(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Unauthorized"
+        )
+        return
+
     await websocket.accept()
     _connections.add(websocket)
     try:
