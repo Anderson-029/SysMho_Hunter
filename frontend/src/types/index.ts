@@ -1,3 +1,62 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// BOUNTY
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BountyRange {
+  min?: number
+  max?: number
+  avg?: number
+}
+
+export interface BountyTierTable {
+  low?: BountyRange
+  medium?: BountyRange
+  high?: BountyRange
+  critical?: BountyRange
+}
+
+export interface BountyTiers {
+  primary?: BountyTierTable
+  secondary?: BountyTierTable
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMPAIGN
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CampaignMultipliers {
+  low?: number
+  medium?: number
+  high?: number
+  critical?: number
+}
+
+export interface ActiveCampaign {
+  end_date?: string
+  description?: string
+  asset_count?: number
+  bounty_multipliers?: CampaignMultipliers
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCOPE
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface Scope {
+  id: string
+  target_id: string
+  scope_type: string
+  value: string
+  is_in_scope: boolean
+  tier?: 'primary' | 'secondary'
+  notes?: string
+  created_at: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TARGET
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface Target {
   id: string
   name: string
@@ -5,22 +64,44 @@ export interface Target {
   h1_program_slug?: string
   status: string
   priority: number
+  notes?: string
   platform?: string
   program_url?: string
+
+  // Contenido del programa
+  introduction_md?: string
   rules_md?: string
-  bounty_table?: Record<string, string>
+  disclosure_policy?: string
   out_of_scope_notes?: string
   safe_harbor: boolean
+
+  // Badges y features
+  program_features?: string[]
+  program_tags?: string[]
+
+  // Métricas de respuesta (en horas)
+  response_efficiency_pct?: number
+  avg_response_hours?: number
+  avg_triage_hours?: number
+  avg_bounty_hours?: number
+  avg_resolution_hours?: number
+
+  // Recompensas
+  bounty_tiers?: BountyTiers
+
+  // Campaña activa
+  active_campaign?: ActiveCampaign
+
+  // Vuln types priorizadas
+  focus_areas?: string[]
+
   scopes: Scope[]
   created_at: string
 }
 
-export interface Scope {
-  id: string
-  scope_type: string
-  value: string
-  is_in_scope: boolean
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// SCAN / FINDING / ACTIONS / LOGS
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface Scan {
   id: string
