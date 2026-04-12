@@ -148,6 +148,7 @@ Umbrales configurables en BD (`agent_config`):
 | `/hunter-ci` | Pipeline CI local | Siempre antes de git commit |
 | `/hunter-quality` | Auditoría calidad backend | Score 0-100 antes de commit |
 | `/hunter-security` | Escaneo SAST del código | Antes de push |
+| `/hunter-owasp` | Auditoría OWASP Top 10 + MITRE ATT&CK + CWE | **Antes de operar contra targets reales** |
 | `/hunter-ui-audit` | Auditoría frontend | Evaluar dependencias UI |
 | `/hunter-ui-upgrade` | Instalar deps pro UI | Después de audit con score < 10 |
 | `/hunter-prompt-improver` | Optimizar prompt antes de tarea compleja | Cualquier tarea ambigua |
@@ -168,6 +169,7 @@ Umbrales configurables en BD (`agent_config`):
 | Error de BD | `/hunter` → `/hunter-stats` | `backend/app/database.py` |
 | Umbral cerebro incorrecto | `/hunter-config` | tabla `agent_config` |
 | Tests fallando | `tests/AGENTS.md` | `cd backend && uv run pytest ../tests/ -v` |
+| Auditoría previa a operación | `/hunter-owasp` | OWASP + MITRE + CWE completo |
 
 ---
 

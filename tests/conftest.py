@@ -12,6 +12,14 @@ import sys
 import uuid
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Cargar configuración de tests desde .env.test
+_PROJECT_ROOT = Path(__file__).parent.parent
+_ENV_TEST = _PROJECT_ROOT / ".env.test"
+if _ENV_TEST.exists():
+    load_dotenv(_ENV_TEST)
+
 # Agregar backend/ al sys.path para que 'app' sea importable
 # desde cualquier directorio donde se lance pytest
 _BACKEND = Path(__file__).parent.parent / "backend"
@@ -30,11 +38,15 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 # ── Apuntar a BD de tests antes de importar la app ───────────────────
-TEST_DB_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:ander123@127.0.0.1/sysmho_hunter_test",
-)
-os.environ.setdefault("TEST_DATABASE_URL", TEST_DB_URL)
+# TEST_DATABASE_URL DEBE estar en .env.test o setear antes de ejecutar
+# No usar defaults hardcodeados en código
+TEST_DB_URL = os.getenv("TEST_DATABASE_URL")
+if not TEST_DB_URL:
+    raise RuntimeError(
+        "TEST_DATABASE_URL no configurada. "
+        "Setear en .env.test o como variable de entorno."
+    )
+os.environ["TEST_DATABASE_URL"] = TEST_DB_URL
 
 # Parchar settings ANTES de que la app los lea
 os.environ["DB_NAME"] = "sysmho_hunter_test"

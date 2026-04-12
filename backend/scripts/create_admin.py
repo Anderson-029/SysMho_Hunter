@@ -1,12 +1,12 @@
 """
 Script para crear el primer usuario admin.
 
-Uso: cd backend && uv run python scripts/create_admin.py
+Uso: ADMIN_PASSWORD='your_secure_password' cd backend && uv run python scripts/create_admin.py
 
 Lee variables del entorno:
 - ADMIN_USERNAME (default: "admin")
 - ADMIN_EMAIL (default: "admin@localhost")
-- ADMIN_PASSWORD (default: "admin123")
+- ADMIN_PASSWORD (REQUERIDA - no usar default débil)
 """
 
 import asyncio
@@ -37,7 +37,12 @@ async def create_admin_user():
     """Crea el usuario admin si no existe."""
     username = os.getenv("ADMIN_USERNAME", "admin")
     email = os.getenv("ADMIN_EMAIL", "admin@localhost")
-    password = os.getenv("ADMIN_PASSWORD", "admin123")
+    password = os.getenv("ADMIN_PASSWORD")
+
+    if not password:
+        print("❌ Error: ADMIN_PASSWORD no configurada.")
+        print("Uso: ADMIN_PASSWORD='tu_password_segura' uv run python scripts/create_admin.py")
+        return
 
     # Crear tablas si no existen
     async with engine.begin() as conn:
