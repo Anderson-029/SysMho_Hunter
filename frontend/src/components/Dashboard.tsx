@@ -9,6 +9,7 @@ import {
   Wifi,
   WifiOff,
   LogOut,
+  Terminal,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import {
@@ -24,6 +25,8 @@ import { FindingsList } from './FindingsList'
 import { PendingActions } from './PendingActions'
 import { LiveLogs } from './LiveLogs'
 import { TargetsManager } from './TargetsManager'
+import { CommandApprovalModal } from './CommandApprovalModal'
+import { TerminalPanel } from './TerminalPanel'
 
 /* ------------------------------------------------------------------ */
 /* Componente de número animado                                         */
@@ -52,7 +55,7 @@ function AnimatedNumber({ value }: { value: number }) {
 /* ------------------------------------------------------------------ */
 /* Tipos de tabs                                                        */
 /* ------------------------------------------------------------------ */
-type TabId = 'targets' | 'scans' | 'findings' | 'actions' | 'logs'
+type TabId = 'targets' | 'scans' | 'findings' | 'actions' | 'logs' | 'terminal'
 
 const SEV_COLOR: Record<string, string> = {
   critical: '#ff3366',
@@ -151,6 +154,7 @@ export function Dashboard() {
     { id: 'findings', label: 'FINDINGS', Icon: Bug, badge: findings.length },
     { id: 'actions', label: 'ACCIONES', Icon: Zap, badge: pendingActions.length },
     { id: 'logs', label: 'LOGS', Icon: Clock },
+    { id: 'terminal', label: 'TERMINAL', Icon: Terminal },
   ]
 
   return (
@@ -378,8 +382,12 @@ export function Dashboard() {
           {activeTab === 'findings' && <FindingsList />}
           {activeTab === 'actions' && <PendingActions />}
           {activeTab === 'logs' && <LiveLogs />}
+          {activeTab === 'terminal' && <TerminalPanel />}
         </motion.div>
       </div>
+
+      {/* Modal de aprobación — siempre montado, aparece con AnimatePresence */}
+      <CommandApprovalModal />
     </div>
   )
 }

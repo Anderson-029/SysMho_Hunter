@@ -30,10 +30,17 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.5",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# Buscar tests en ../tests/ con el paquete app accesible
+testpaths = ["../tests"]
+pythonpath = ["."]  # agrega backend/ al sys.path para que 'app' sea importable
 
 [tool.ruff]
 line-length = 79
@@ -43,9 +50,12 @@ exclude = ["migrations/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
-# F821: SQLAlchemy cross-model forward references son falsos positivos
-# porque las clases viven en archivos distintos y ruff no las resuelve
-per-file-ignores = { "app/models/*.py" = ["F821"] }
+
+[tool.ruff.lint.per-file-ignores]
+# F821: SQLAlchemy cross-model — forward references en archivos distintos
+"app/models/*.py" = ["F821"]
+# tool_explanations.py es archivo de datos con texto humano (E501 ok)
+"app/recon/tool_explanations.py" = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

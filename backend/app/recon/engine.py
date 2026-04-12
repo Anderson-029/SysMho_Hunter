@@ -4,6 +4,8 @@ ReconEngine — orquesta la ejecución de herramientas por fases.
 
 import asyncio
 import logging
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,12 @@ DEFAULT_PHASES = [
     "web_fingerprint",
     "crawl",
     "vuln_scan",
+]
+
+# Tipo del callback de aprobación
+ApprovalCallback = Callable[
+    [Any, str, list[str], str, str, AsyncSession],
+    Coroutine[Any, Any, bool],
 ]
 
 
@@ -33,12 +41,16 @@ class ReconEngine:
         phases: list[str] | None = None,
         db: AsyncSession | None = None,
         target_id: str | None = None,
+        approval_callback: ApprovalCallback | None = None,
     ) -> dict:
         """
         Ejecuta todas las fases de reconocimiento en orden.
         Retorna un dict con los findings agrupados por fase.
 
         target_id: UUID del target en BD (para validación mejorada)
+        approval_callback: función async que solicita aprobación humana
+            antes de ejecutar cada herramienta. Si retorna False, la
+            herramienta se salta.
         """
         phases = phases or DEFAULT_PHASES
         all_findings: dict[str, list[dict]] = {}
@@ -55,7 +67,13 @@ class ReconEngine:
                 f"[Recon] Fase '{phase}': {len(tools)} tools disponibles."
             )
             phase_findings = await self._run_phase(
-                tools, target, scope, phase, target_id, db
+                tools,
+                target,
+                scope,
+                phase,
+                target_id,
+                db,
+                approval_callback,
             )
             all_findings[phase] = phase_findings
 
@@ -69,19 +87,39 @@ class ReconEngine:
         phase: str,
         target_id: str | None = None,
         db: AsyncSession | None = None,
+        approval_callback: ApprovalCallback | None = None,
     ) -> list[dict]:
-        """Ejecuta todas las tools de una fase en paralelo.
+        """Ejecuta las tools de una fase, una a una para que el usuario
+        pueda aprobar o rechazar cada una antes de que empiece.
 
-        Respeta el semáforo de concurrencia máxima.
+        Las herramientas aprobadas se ejecutan en paralelo respetando
+        el semáforo de concurrencia.
         """
+        # Fase A: solicitar aprobación secuencialmente (una a la vez)
+        approved_tools = []
+        if approval_callback and db and target_id:
+            for tool in tools:
+                ok = await approval_callback(
+                    tool, target, scope, phase, target_id, db
+                )
+                if ok:
+                    approved_tools.append(tool)
+        else:
+            # Sin callback → ejecutar todas (compatibilidad hacia atrás)
+            approved_tools = tools
+
+        if not approved_tools:
+            return []
+
+        # Fase B: ejecutar las herramientas aprobadas en paralelo
         tasks = [
             self._run_tool(tool, target, scope, target_id, db)
-            for tool in tools
+            for tool in approved_tools
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         findings = []
-        for tool, result in zip(tools, results):
+        for tool, result in zip(approved_tools, results):
             if isinstance(result, Exception):
                 logger.warning(
                     f"[Recon] {tool.name}: {type(result).__name__}: {result}"

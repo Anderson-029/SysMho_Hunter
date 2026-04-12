@@ -19,13 +19,11 @@ from app.models.log import AgentLog, BrainReasoning
 from app.models.scan import Scan
 from app.models.target import Scope, Target
 from app.recon.engine import ReconEngine
+from app.recon.tool_explanations import get_tool_explanation
 
 logger = logging.getLogger(__name__)
 
 recon_engine = ReconEngine()
-
-# Tools que requieren pending_action antes de ejecutar en modo agresivo
-HIGH_RISK_TOOLS = {"sqlmap", "masscan"}
 
 
 class ScanService:
@@ -59,14 +57,28 @@ class ScanService:
                     f"Iniciando scan {scan_id} contra {target_url}",
                 )
 
-                # FASE 1: Reconocimiento
+                # FASE 1: Reconocimiento (con aprobación por herramienta)
                 await self._update_status(db, scan_id, "running", "recon")
+
+                # Closure que inyecta scan_id en el callback de aprobación
+                async def _approval_cb(tool, target, scope, phase, tid, db):
+                    return await self._request_tool_approval(
+                        tool,
+                        target,
+                        scope,
+                        phase,
+                        tid,
+                        db,
+                        _scan_id=scan_id,
+                    )
+
                 recon_findings = await recon_engine.run_scan(
                     scan_id=scan_id,
                     target=target_url,
                     scope=scope_values or [target_url],
                     db=db,
                     target_id=str(scan.target_id),
+                    approval_callback=_approval_cb,
                 )
 
                 # Guardar hallazgos de recon como findings
@@ -102,8 +114,7 @@ class ScanService:
                         "recon_data": {"phases": list(recon_findings.keys())},
                         "findings": [],
                         "description": (
-                            f"Scan de {target_url}"
-                            f" con {total_recon} hallazgos"
+                            f"Scan de {target_url} con {total_recon} hallazgos"
                         ),
                     },
                 )
@@ -288,6 +299,84 @@ class ScanService:
         )
         db.add(action)
         await db.commit()
+
+    async def _request_tool_approval(
+        self,
+        tool: object,
+        target: str,
+        scope: list[str],
+        phase: str,
+        target_id: str,
+        db: AsyncSession,
+        _scan_id: str = "",
+    ) -> bool:
+        """Crea una PendingAction para la herramienta, espera aprobación.
+
+        Retorna True si fue aprobada, False si rechazada o timeout.
+        """
+        from app.websocket.router import (
+            broadcast_command_output,
+            broadcast_command_request,
+        )
+
+        explanation = get_tool_explanation(tool.name)
+        cmd = explanation.get("command_template", "{binary} {target}").format(
+            target=target, binary=getattr(tool, "binary", tool.name)
+        )
+
+        action = PendingAction(
+            action_type="command_approval",
+            description=f"Ejecutar {tool.name} contra {target}",
+            scan_id=_scan_id or None,
+            target_id=target_id,
+            payload={
+                "tool_name": tool.name,
+                "command": cmd,
+                "human_explanation": explanation.get("human_explanation", ""),
+                "why_needed": explanation.get("why_needed", ""),
+                "risk_explanation": explanation.get("risk_explanation", ""),
+            },
+            risk_level=getattr(tool, "risk_level", "low"),
+            risk_reason=explanation.get("risk_explanation", ""),
+            requested_by="agent",
+            status="pending",
+        )
+        db.add(action)
+        await db.commit()
+        await db.refresh(action)
+
+        # Notificar al frontend
+        await broadcast_command_request(action)
+        await self._log(
+            db,
+            _scan_id,
+            "warning",
+            tool.name,
+            f"⏳ Esperando aprobación para ejecutar: {tool.name}",
+        )
+
+        # Esperar respuesta humana
+        approved = await tool.await_approval(str(action.id), db)
+
+        if approved:
+            await self._log(
+                db,
+                _scan_id,
+                "info",
+                tool.name,
+                f"✅ {tool.name} aprobado — ejecutando: {cmd}",
+            )
+        else:
+            await self._log(
+                db,
+                _scan_id,
+                "info",
+                tool.name,
+                f"⛔ {tool.name} rechazado o expiró — omitiendo.",
+            )
+            await broadcast_command_output(tool.name, "", _scan_id)
+
+        return approved
 
 
 scan_service = ScanService()

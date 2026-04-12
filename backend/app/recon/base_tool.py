@@ -16,6 +16,9 @@ from urllib.parse import urlparse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+APPROVAL_POLL_INTERVAL = 5  # segundos entre polls a la BD
+APPROVAL_TIMEOUT = 300  # segundos máximos de espera (5 minutos)
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +61,45 @@ class BaseTool(ABC):
     phase: str = ""
     risk_level: str = "low"  # low|medium|high|critical
     default_timeout: int = 300
+
+    async def await_approval(
+        self,
+        action_id: str,
+        db: AsyncSession,
+        timeout_secs: int = APPROVAL_TIMEOUT,
+    ) -> bool:
+        """Hace polling a la BD hasta que la PendingAction sea aprobada
+        o rechazada.
+
+        Retorna True si fue aprobada, False si fue rechazada o expiró.
+        """
+        from app.models.action import PendingAction
+
+        start = time.monotonic()
+        while time.monotonic() - start < timeout_secs:
+            db.expire_all()  # Forzar re-lectura desde BD (síncrono)
+            result = await db.execute(
+                select(PendingAction).where(
+                    PendingAction.id == uuid.UUID(action_id)
+                )
+            )
+            action = result.scalars().first()
+            if not action:
+                logger.warning(
+                    f"[BaseTool] PendingAction {action_id} no encontrada"
+                )
+                return False
+            if action.status == "approved":
+                return True
+            if action.status == "rejected":
+                return False
+            await asyncio.sleep(APPROVAL_POLL_INTERVAL)
+
+        logger.warning(
+            f"[BaseTool] Timeout esperando aprobación de {action_id}"
+            f" ({timeout_secs}s)"
+        )
+        return False
 
     def __init__(self, config: dict | None = None):
         self.config = config or {}
@@ -112,9 +154,7 @@ class BaseTool(ABC):
         from app.models.target import Scope, Target
 
         # Obtener target de BD
-        result = await db.execute(
-            select(Target).where(Target.id == target_id)
-        )
+        result = await db.execute(select(Target).where(Target.id == target_id))
         target_obj = result.scalar_one_or_none()
         if not target_obj:
             msg = f"Target {target_id} no encontrado en BD"
@@ -166,8 +206,7 @@ class BaseTool(ABC):
                     ip = ipaddress.ip_address(host)
                     if ip in network:
                         logger.info(
-                            f"[Scope Validation] ✓ {target} matched CIDR "
-                            f"'{s}'"
+                            f"[Scope Validation] ✓ {target} matched CIDR '{s}'"
                         )
                         return True
                 except ValueError:

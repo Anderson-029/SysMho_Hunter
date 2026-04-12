@@ -75,7 +75,10 @@ class BrainRouter:
                     model="sklearn",
                     latency_ms=latency_ms,
                     confidence=conf,
-                    reason=f"ML confidence {conf:.3f} >= {ML_CONFIDENCE_THRESHOLD}",
+                    reason=(
+                        f"ML confidence {conf:.3f}"
+                        f" >= {ML_CONFIDENCE_THRESHOLD}"
+                    ),
                 )
                 return ml_result
 
@@ -99,7 +102,6 @@ class BrainRouter:
                             (time.monotonic() - start) * 1000
                         )
                         llm_result["total_latency_ms"] = total_latency
-                        ollama_latency = llm_result["_meta"]["latency_ms"]
                         _log_brain_decision(
                             task_type=task_type,
                             level=2,
@@ -108,7 +110,8 @@ class BrainRouter:
                             confidence=confidence,
                             reason=(
                                 f"Ollama available, confidence "
-                                f"{confidence:.3f} >= {LOCAL_CONFIDENCE_THRESHOLD}"
+                                f"{confidence:.3f}"
+                                f" >= {LOCAL_CONFIDENCE_THRESHOLD}"
                             ),
                         )
                         return llm_result

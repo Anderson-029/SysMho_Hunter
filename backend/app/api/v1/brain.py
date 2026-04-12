@@ -86,7 +86,7 @@ async def brain_test() -> dict[str, Any]:
     if await local_llm.is_available():
         try:
             start = time.monotonic()
-            ollama_result = await local_llm.complete(
+            await local_llm.complete(
                 'Respond with JSON: {"status": "test"}'
             )
             latency = int((time.monotonic() - start) * 1000)
@@ -123,7 +123,9 @@ async def brain_stats() -> dict[str, Any]:
     # Por ahora retornamos estructura para documentar el formato
 
     return {
-        "message": "Stats storage not yet implemented. Implementar en Fase 3.2",
+        "message": (
+            "Stats storage not yet implemented. Implementar en Fase 3.2"
+        ),
         "planned_metrics": {
             "level_1_usage_pct": 0,
             "level_2_usage_pct": 0,
