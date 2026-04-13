@@ -46,3 +46,6 @@ ml/data/processed/
 
 # Ollama (gestionado por ~/.ollama/)
 models_local/
+
+# Laboratorios de prueba
+labs/
