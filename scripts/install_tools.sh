@@ -32,8 +32,8 @@ install_pkg() {
 install_go_tool() {
     local tool=$1; local pkg=$2
     if ! which "$tool" &>/dev/null; then
-        log_warn "Instalando $tool via go install..."
-        go install "$pkg" 2>/dev/null && log_ok "$tool instalado" || log_err "Fallo instalando $tool"
+        log_warn "Instalando $tool via go install (esto puede tardar, verás la salida)..."
+        go install -v "$pkg" && log_ok "$tool instalado" || log_err "Fallo instalando $tool"
     else
         log_ok "$tool ya instalado"
     fi
@@ -55,10 +55,14 @@ for tool in nmap masscan sqlmap nikto whatweb wfuzz; do
     fi
 done
 
-# wafw00f (pip)
+# wafw00f (pipx para evitar conflictos con el sistema)
 if ! which wafw00f &>/dev/null; then
-    log_warn "Instalando wafw00f..."
-    sudo pip3 install wafw00f -q && log_ok "wafw00f instalado" || log_err "Fallo: wafw00f"
+    log_warn "Instalando wafw00f via pipx..."
+    if ! which pipx &>/dev/null; then
+        log_err "pipx no encontrado. Instálalo con: sudo apt install pipx && pipx ensurepath"
+    else
+        pipx install wafw00f && log_ok "wafw00f instalado via pipx" || log_err "Fallo: wafw00f"
+    fi
 else
     log_ok "wafw00f ya instalado"
 fi
