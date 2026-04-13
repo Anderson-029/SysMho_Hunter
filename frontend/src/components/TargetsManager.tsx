@@ -95,7 +95,7 @@ export function TargetsManager() {
     if (!confirm('¿Eliminar este programa?')) return
     try {
       const { api } = await import('../api/client')
-      await api.delete(`/targets/${id}`)
+      await api.delete(`/targets/${id}/`)
       loadTargets()
     } catch (err) {
       console.error('Error deleting target:', err)
@@ -105,7 +105,7 @@ export function TargetsManager() {
   const handleDeleteScope = async (targetId: string, scopeId: string) => {
     try {
       const { api } = await import('../api/client')
-      await api.delete(`/targets/${targetId}/scopes/${scopeId}`)
+      await api.delete(`/targets/${targetId}/scopes/${scopeId}/`)
       loadTargets()
     } catch (err) {
       console.error('Error deleting scope:', err)
