@@ -50,7 +50,7 @@ async def create_target(
     return result.scalar_one()
 
 
-@router.get("/{target_id}", response_model=TargetResponse)
+@router.get("/{target_id}/", response_model=TargetResponse)
 async def get_target(
     target_id: uuid.UUID, db: AsyncSession = Depends(get_session)
 ):
@@ -65,7 +65,7 @@ async def get_target(
     return target
 
 
-@router.patch("/{target_id}", response_model=TargetResponse)
+@router.patch("/{target_id}/", response_model=TargetResponse)
 async def update_target(
     target_id: uuid.UUID,
     data: TargetUpdate,
@@ -86,7 +86,7 @@ async def update_target(
     return result.scalar_one()
 
 
-@router.delete("/{target_id}", status_code=204)
+@router.delete("/{target_id}/", status_code=204)
 async def delete_target(
     target_id: uuid.UUID, db: AsyncSession = Depends(get_session)
 ):
@@ -99,7 +99,7 @@ async def delete_target(
 
 
 @router.post(
-    "/{target_id}/scopes",
+    "/{target_id}/scopes/",
     response_model=ScopeResponse,
     status_code=201,
 )
@@ -121,7 +121,7 @@ async def add_scope(
     return scope
 
 
-@router.post("/{target_id}/scopes/bulk", response_model=list[ScopeResponse])
+@router.post("/{target_id}/scopes/bulk/", response_model=list[ScopeResponse])
 async def bulk_import_scopes(
     target_id: uuid.UUID,
     data: ScopeBulkImportLines,
@@ -156,7 +156,7 @@ async def bulk_import_scopes(
     return scopes_created
 
 
-@router.delete("/{target_id}/scopes/{scope_id}", status_code=204)
+@router.delete("/{target_id}/scopes/{scope_id}/", status_code=204)
 async def delete_scope(
     target_id: uuid.UUID,
     scope_id: uuid.UUID,

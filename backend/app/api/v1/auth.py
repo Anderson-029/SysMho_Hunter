@@ -26,7 +26,7 @@ from app.services.auth_service import (
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login/", response_model=TokenResponse)
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_session),
@@ -55,7 +55,7 @@ async def login(
     return TokenResponse(**tokens)
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh/", response_model=TokenResponse)
 async def refresh(
     request: RefreshTokenRequest,
     db: AsyncSession = Depends(get_session),
@@ -74,7 +74,7 @@ async def refresh(
     return TokenResponse(**result)
 
 
-@router.post("/logout")
+@router.post("/logout/")
 async def logout(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),

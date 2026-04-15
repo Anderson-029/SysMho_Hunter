@@ -174,17 +174,22 @@ async def auth_middleware(request: Request, call_next):
     3. Si es OPTIONS (CORS preflight) → autorizado
     4. Sino → 401 Unauthorized
     """
-    # Rutas públicas
+    # Rutas públicas (con y sin trailing slash)
     public_paths = {
         "/health",
         "/auth/login",
+        "/auth/login/",
         "/auth/refresh",
+        "/auth/refresh/",
         "/docs",
         "/redoc",
         "/openapi.json",
         "/api/v1/brain/status",
+        "/api/v1/brain/status/",
         "/api/v1/brain/test",
+        "/api/v1/brain/test/",
         "/api/v1/brain/stats",
+        "/api/v1/brain/stats/",
     }
 
     # CORS preflight
