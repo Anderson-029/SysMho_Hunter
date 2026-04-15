@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null })
         try {
-          const response = await fetch(`${API_BASE}/auth/login`, {
+          const response = await fetch(`${API_BASE}/auth/login/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
@@ -83,7 +83,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const token = get().accessToken
           if (token) {
-            await fetch(`${API_BASE}/auth/logout`, {
+            await fetch(`${API_BASE}/auth/logout/`, {
               method: 'POST',
               headers: { Authorization: `Bearer ${token}` },
             })
@@ -107,7 +107,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          const response = await fetch(`${API_BASE}/auth/refresh`, {
+          const response = await fetch(`${API_BASE}/auth/refresh/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh_token: refreshToken }),
