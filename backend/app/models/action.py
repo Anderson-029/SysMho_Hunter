@@ -20,10 +20,10 @@ class PendingAction(Base):
         UUID(as_uuid=True), ForeignKey("targets.id")
     )
     scan_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("scans.id")
+        UUID(as_uuid=True), ForeignKey("scans.id", ondelete="CASCADE")
     )
     finding_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("findings.id")
+        UUID(as_uuid=True), ForeignKey("findings.id", ondelete="CASCADE")
     )
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     risk_level: Mapped[str] = mapped_column(

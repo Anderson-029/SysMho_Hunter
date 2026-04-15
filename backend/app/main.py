@@ -73,7 +73,7 @@ async def normalize_trailing_slash(request, call_next):
         if (
             not path.endswith("/")
             and not path.endswith(".json")
-            and path not in ("/ws", "/ws/live")
+            and path not in ("/ws", "/ws/live", "/health")
             and "/docs" not in path
             and "/redoc" not in path
             and "/openapi" not in path

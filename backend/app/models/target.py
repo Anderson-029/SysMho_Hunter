@@ -79,9 +79,11 @@ class Target(Base):
     scopes: Mapped[list["Scope"]] = relationship(
         "Scope", back_populates="target", cascade="all, delete-orphan"
     )
-    scans: Mapped[list["Scan"]] = relationship("Scan", back_populates="target")
+    scans: Mapped[list["Scan"]] = relationship(
+        "Scan", back_populates="target", cascade="all, delete-orphan"
+    )
     findings: Mapped[list["Finding"]] = relationship(
-        "Finding", back_populates="target"
+        "Finding", back_populates="target", cascade="all, delete-orphan"
     )
 
 

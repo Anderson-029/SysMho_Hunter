@@ -40,13 +40,13 @@ class Scan(Base):
         "ScanTask", back_populates="scan", cascade="all, delete-orphan"
     )
     findings: Mapped[list["Finding"]] = relationship(
-        "Finding", back_populates="scan"
+        "Finding", back_populates="scan", cascade="all, delete-orphan"
     )
     logs: Mapped[list["AgentLog"]] = relationship(
-        "AgentLog", back_populates="scan"
+        "AgentLog", back_populates="scan", cascade="all, delete-orphan"
     )
     reasoning: Mapped[list["BrainReasoning"]] = relationship(
-        "BrainReasoning", back_populates="scan"
+        "BrainReasoning", back_populates="scan", cascade="all, delete-orphan"
     )
 
 
