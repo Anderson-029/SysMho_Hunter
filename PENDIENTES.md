@@ -1,6 +1,6 @@
 # 📋 PENDIENTES — SysMho Hunter v0.2.0
 
-> Roadmap de mejoras, features y fixes. Actualizado: 11 Abril 2026
+> Roadmap de mejoras, features y fixes. Actualizado: 12 Abril 2026
 
 ---
 
@@ -66,6 +66,29 @@
 - ~~Frontend: mostrar/ocultar UI según rol~~ **UI única para admin**
 
 **NOTA:** SysMho Hunter es single-user (Anderson = admin único). Si en futuro quieres multi-user, la arquitectura ya está lista.
+
+### Labs & Integration System ✅ COMPLETADO (12 Abril 2026)
+- [x] deploy.sh auditado → REMOVIDO (violaba los 5 pilares: Docker CLI inválido, stubs incompletos)
+- [x] sysmho_integration.sh — 3 bugs críticos corregidos:
+  - ask_confirmation(): TTY fallback (`read -r response < /dev/tty || read -r response`)
+  - Trailing slash en todos los endpoints POST/GET (`/api/v1/targets/`, `/api/v1/scans/`, `/api/v1/findings/`)
+  - Printf `%%` escaping para evitar error de formato
+- [x] TargetsManager.tsx — botones DELETE corregidos (trailing slash `/targets/${id}/` y `/targets/${targetId}/scopes/${scopeId}/`)
+- [x] scripts/check_tools.sh creado — verifica 19 herramientas de pentesting
+- [x] scripts/test_integration_e2e.sh creado — test automatizado end-to-end (target → scan → monitor → findings)
+- [x] scripts/README_TOOLS.md creado — guía de instalación por distro (Kali, Arch, Ubuntu)
+- [x] labs/README.md actualizado — documenta nuevo flujo 2-terminales
+- [x] Auditorías .claude/audits/ creadas: AUDIT_DEPLOY_SH.md, AUDIT_INTEGRATION_SH_FIXES.md
+- [x] ADR .claude/decisions/DECISION_REMOVE_DEPLOY_SH.md
+- [x] Test E2E ejecutado y confirmado: target → scan → recon → brain → completed (0 findings en lab de prueba)
+- [x] 19 herramientas de pentesting instaladas en sistema Ubuntu
+- [x] .gitignore: labs/ añadido (Docker labs no subir a GitHub)
+
+### Fase 4: Security Hardening ✅ COMPLETADO (12 Abril 2026)
+- [x] Credential remediation — secrets eliminados del código
+- [x] OWASP Top 10 compliance verificado
+- [x] SECURITY.md policy creada
+- [x] Auditorías SAST ejecutadas
 
 ### Fase 3: Mejoras Ollama & IA ✅ COMPLETADA
 - [x] Logging detallado del brain (JSON estructurado con timestamps)
@@ -138,6 +161,10 @@
 - [x] Ollama no se reportaba como disponible en health check (FIXED: estaba activo, solo script lo reportaba mal)
 - [x] Email validator rechazaba .local y localhost (FIXED: usando admin@example.com)
 - [x] AxiosResponse import error en Vite (FIXED: removido type import innecesario)
+- [x] integration.sh hanging en ask_confirmation sin TTY (FIXED: TTY fallback)
+- [x] integration.sh "Fallo al crear target" silencioso (FIXED: trailing slash en endpoints)
+- [x] integration.sh printf format error `%` (FIXED: `%%` escaping)
+- [x] Dashboard: botón DELETE target no funcionaba (FIXED: trailing slash en TargetsManager.tsx)
 - [ ] Session timeout a los 30min (por diseño, esperar confirm)
 
 ---
@@ -163,8 +190,8 @@
 
 ---
 
-**Última actualización:** 11 Abril 2026  
-**Actualizado por:** Claude Sonnet 4.6  
+**Última actualización:** 12 Abril 2026  
+**Actualizado por:** Claude Haiku 4.5  
 **Estado general:** 
 - ✅ Fase 1 (Auth JWT) COMPLETADA Y PROBADA
 - ✅ Fase 2 (RBAC) NO APLICA (single-user admin)
@@ -172,4 +199,11 @@
   - Endpoints /api/v1/brain/* operacionales
   - Brain diagnostics validados: ML + Ollama + Cloud (API key expired)
   - Ollama 75% usage rate (3/4 tasks, 1 ML task skips Ollama by design)
-- ⏳ Fase 4 (Tests & CI) SIGUIENTE
+- ✅ Fase 4 (Security Hardening) COMPLETADA
+  - Credential remediation, OWASP compliance, SECURITY.md
+- ✅ Labs & Integration System COMPLETADO Y PROBADO E2E
+  - deploy.sh removido, sysmho_integration.sh corregido
+  - 3 bugs críticos solucionados (TTY, trailing slash, printf)
+  - Dashboard DELETE fix aplicado
+  - 19 herramientas pentesting instaladas
+- ⏳ Fase 5 (Tests & CI) SIGUIENTE

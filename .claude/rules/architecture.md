@@ -1,5 +1,24 @@
 # Arquitectura & Decisiones Técnicas
 
+## Patrones Críticos
+
+### FastAPI Trailing Slash
+Todos los endpoints POST/DELETE requieren trailing slash. Sin él, FastAPI devuelve 307 y curl/axios no siguen el redirect en métodos con body:
+- ✅ `POST /api/v1/targets/`
+- ✅ `DELETE /api/v1/targets/{id}/`
+- ✅ `GET /api/v1/findings/?scan_id=...`
+- ❌ `POST /api/v1/targets` → 307 redirect, falla silenciosamente
+
+Aplica en: scripts bash (curl), frontend (axios), tests.
+
+### Labs — Flujo de Operación
+1. Usuario inicia lab manualmente (e.g., Docker: `bash auto_deploy.sh`)
+2. Usuario ejecuta `bash labs/sysmho_integration.sh auto <lab> <ip> [port]`
+3. Script crea target + lanza scan en SysMho Hunter API
+4. Monitoreo automático hasta completion
+
+---
+
 ## Stack Tecnológico (NO CAMBIAR)
 
 ### Backend

@@ -174,31 +174,30 @@ async def auth_middleware(request: Request, call_next):
     3. Si es OPTIONS (CORS preflight) → autorizado
     4. Sino → 401 Unauthorized
     """
-    # Rutas públicas (con y sin trailing slash)
-    public_paths = {
+    # Rutas públicas (patrones base, sin trailing slash)
+    public_prefixes = {
         "/health",
         "/auth/login",
-        "/auth/login/",
         "/auth/refresh",
-        "/auth/refresh/",
         "/docs",
         "/redoc",
         "/openapi.json",
         "/api/v1/brain/status",
-        "/api/v1/brain/status/",
         "/api/v1/brain/test",
-        "/api/v1/brain/test/",
         "/api/v1/brain/stats",
-        "/api/v1/brain/stats/",
     }
 
     # CORS preflight
     if request.method == "OPTIONS":
         return await call_next(request)
 
-    # Chequear si es ruta pública
+    # Chequear si es ruta pública (con o sin trailing slash)
     request_path = request.url.path
-    if request_path in public_paths:
+    is_public = any(
+        request_path == path or request_path == path + "/"
+        for path in public_prefixes
+    )
+    if is_public:
         return await call_next(request)
 
     # Obtener headers

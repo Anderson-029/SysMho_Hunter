@@ -57,6 +57,35 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None,
 )
 
+# =====================================================================
+# Middleware de normalización de trailing slash para POST/DELETE/PATCH
+# =====================================================================
+async def normalize_trailing_slash(request, call_next):
+    """Normaliza trailing slash para GET/POST/DELETE/PATCH.
+
+    Convierte /auth/login a /auth/login/ (con slash) para que todos
+    los endpoints sean consistentes.
+    Ejecuta ANTES de auth_middleware para que no se pierda autenticación.
+    """
+    if request.method in ("GET", "POST", "DELETE", "PATCH"):
+        path = request.url.path
+        # Agregar trailing slash si no lo tiene (excepto en rutas especiales)
+        if (
+            not path.endswith("/")
+            and not path.endswith(".json")
+            and path not in ("/ws", "/ws/live")
+            and "/docs" not in path
+            and "/redoc" not in path
+            and "/openapi" not in path
+        ):
+            # Reconstruir la URL con trailing slash
+            request.scope["path"] = path + "/"
+
+    return await call_next(request)
+
+
+app.middleware("http")(normalize_trailing_slash)
+
 # Middleware de autenticación dual (API Key OR JWT)
 app.middleware("http")(auth_middleware)
 
