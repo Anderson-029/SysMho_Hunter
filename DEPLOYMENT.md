@@ -28,17 +28,13 @@ entender por qué.
 | `logs/`, `.pids/` | Runtime, se generan solos al arrancar | No hacer nada |
 | `.pytest_cache/`, `__pycache__/` | Caché de Python | No hacer nada |
 | `frontend/dist/` | Build de producción del frontend | Se genera con `npm run build` si lo necesitás |
-| Modelo Ollama (`llama3.1:8b`, `nomic-embed-text`) | Pesan GBs, viven en `~/.ollama/`, nunca en git | `ollama pull ...` (paso 3) |
-| Datos de PostgreSQL | Es una BD, no un archivo de proyecto | Se crea vacía y se migra con Alembic (paso 7) |
+| Modelo Ollama / LM Studio | Pesan GBs, viven fuera del repo | Ver `docs/LM_STUDIO.md` |
+| Datos de PostgreSQL | Volumen Docker `postgres_data` | `docker compose up -d` + Alembic |
 | Datos de Qdrant (`qdrant_data` volumen Docker) | Vector DB, se genera al indexar `knowledge/` | Reindexar con `ingest_knowledge.py` (paso 8) |
 
-> ⚠️ **Nota histórica:** en algún momento existió también un `.env` en la
-> **raíz** del proyecto (`SysMho_Hunter/.env`, junto a `.gitignore`). Era una
-> plantilla vieja que nadie leía en runtime — quedó de una reorganización
-> anterior y ya fue eliminado. Si ves referencias a un `.env` en la raíz en
-> documentación antigua, ignóralas: **el único `.env` real es
-> `backend/.env`**. El único archivo legítimo en la raíz es `.env.test`
-> (para tests, ver tabla arriba).
+> ⚠️ **`.env` en la raíz:** Docker Compose lee `.env` en la raíz para
+> sustituir `DB_*`. El backend **solo** lee `backend/.env`. Mantén ambos
+> alineados en passwords de BD.
 
 ### ✅ SÍ viene en git (no hay que hacer nada especial)
 
@@ -159,44 +155,40 @@ ls -la
 
 ## 3. Instalar y arrancar servicios base
 
-### 3.1 PostgreSQL
+### 3.1 PostgreSQL + Qdrant (Docker Compose)
 
 ```bash
-sudo systemctl start postgresql        # Linux
-# brew services start postgresql@16   # macOS
+# Copiar plantilla de compose (raíz) y backend
+cp .env.example .env          # DB_* para compose
+cp backend/.env.example backend/.env
+# Editar passwords y LOCAL_LLM_* (ver docs/LM_STUDIO.md)
 
-# Crear el usuario/BD si no existen (ajustar según tu instalación)
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'tu_password_aqui';"
-sudo -u postgres createdb sysmho_hunter
-```
-
-### 3.2 Ollama + modelos
-
-```bash
-ollama serve &          # deja corriendo en background o en otra terminal
-
-# Modelo principal del cerebro (Nivel 2) — pesa ~6.6 GB
-ollama pull llama3.1:8b-instruct-q6_K
-
-# Modelo de embeddings para RAG — pesa ~274 MB
-ollama pull nomic-embed-text
-```
-
-⚠️ La primera descarga puede tardar 5-15 minutos según tu conexión. No hay
-forma de evitarlo: estos modelos NO viven en git ni se pueden versionar
-razonablemente.
-
-### 3.3 Docker + Qdrant (RAG)
-
-```bash
-# Verificar que Docker corre
-docker ps
-
-# Levantar Qdrant (usa docker-compose.yml de la raíz del proyecto)
-docker compose up -d qdrant
+# Si hay un Postgres del sistema en :5432, detenlo primero.
+docker compose up -d
 
 # Verificar
-curl http://localhost:6333/healthz
+docker compose ps
+curl http://localhost:6333/readyz
+```
+
+### 3.2 Local LLM (OpenAI-compatible)
+
+No se requiere Ollama. Usa LM Studio (u otro servidor `/v1`):
+
+Ver guía completa: [`docs/LM_STUDIO.md`](docs/LM_STUDIO.md)
+
+```bash
+# Ejemplo LM Studio
+# LOCAL_LLM_BASE_URL=http://localhost:1234/v1
+# LOCAL_LLM_MODEL=<id del modelo cargado>
+curl -s http://localhost:1234/v1/models -H "Authorization: Bearer lm-studio"
+```
+
+### 3.3 Docker + Qdrant (incluido en 3.1)
+
+```bash
+docker compose up -d
+curl http://localhost:6333/readyz
 ```
 
 **En Linux, si nunca usaste Docker sin sudo:**

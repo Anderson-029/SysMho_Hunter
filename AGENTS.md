@@ -5,8 +5,8 @@
 **SysMho Hunter v0.3.0-dev — Agente Autónomo de Pentesting y Bug Bounty.**
 
 Stack: Python 3.12 + FastAPI + PostgreSQL + React/Vite + uv
-Cerebro: Híbrido 3 niveles — scikit-learn → Llama 3.1 8B (Ollama) → Gemini 2.0 Flash
-RAG: Qdrant (Docker) + embeddings nomic-embed-text (Ollama) — enriquece Nivel 2/3 con contexto técnico
+Cerebro: Híbrido 3 niveles — scikit-learn → Local LLM OpenAI-compatible → Gemini 2.0 Flash
+RAG: Qdrant (Docker) + embeddings OpenAI-compatible — enriquece Nivel 2/3 con contexto técnico
 Arsenal: nmap, ffuf, feroxbuster, nuclei, subfinder, amass + herramientas Kali/Parrot
 Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e integración con HackerOne.
 
@@ -31,15 +31,15 @@ Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e inte
 |---------|-----------|--------|---------|
 | **Backend API** | FastAPI + uvicorn | 8000 | `cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload` |
 | **Frontend UI** | React + Vite | 5173 | `cd frontend && npm run dev` |
-| **PostgreSQL** | Sistema / servicio | 5432 | `sudo systemctl start postgresql` |
-| **Ollama** | LLM local | 11434 | `ollama serve` |
-| **Qdrant** | Vector DB (RAG) | 6333 | `docker compose up -d qdrant` |
+| **PostgreSQL** | Docker Compose | 5432 | `docker compose up -d` |
+| **Local LLM** | LM Studio / Ollama /v1 | 1234 / 11434 | Ver `docs/LM_STUDIO.md` |
+| **Qdrant** | Docker Compose | 6333 | `docker compose up -d` |
 
 **Comunicación:**
 - HTTP REST: Frontend → `/api/v1/*` endpoints en backend
 - WebSocket: Frontend ← `/ws/live` stream de logs en tiempo real
 - asyncpg pool: Backend ↔ PostgreSQL
-- HTTP: BrainRouter → Ollama `localhost:11434/api/chat`
+- HTTP: BrainRouter → Local LLM `{LOCAL_LLM_BASE_URL}/chat/completions`
 - HTTP: BrainRouter → RAG (`app/rag/retriever.py`) → Qdrant `localhost:6333` (best-effort, no bloqueante)
 
 ---
@@ -48,7 +48,7 @@ Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e inte
 
 ```
 Nivel 1: MLEngine (scikit-learn, <10ms)          → classify_severity, score_vuln, prioritize
-Nivel 2: LocalLLM (Llama 3.1 8B Q6_K, Ollama)   → detect_patterns, analyze_response
+Nivel 2: LocalLLM (OpenAI-compatible)            → detect_patterns, analyze_response
 Nivel 3: CloudClient (Gemini 2.0 Flash) → draft_report, tareas complejas
 ```
 

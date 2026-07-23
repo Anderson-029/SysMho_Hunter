@@ -5,6 +5,7 @@ Lee variables del archivo .env automáticamente.
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,14 +27,16 @@ class Settings(BaseSettings):
     # APIs cloud
     gemini_api_key: str = ""
 
-    # Ollama
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1:8b-instruct-q6_K"
+    # LLM local — API OpenAI-compatible (LM Studio, Ollama /v1, vLLM, …)
+    local_llm_base_url: str = "http://localhost:1234/v1"
+    local_llm_model: str = "local-model"
+    local_llm_api_key: str = "lm-studio"
 
-    # RAG — Qdrant + embeddings
+    # RAG — Qdrant + embeddings OpenAI-compatible
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "security_knowledge"
-    embedding_model: str = "nomic-embed-text"
+    embedding_base_url: str = ""
+    embedding_model: str = "text-embedding-nomic-embed-text-v1.5"
     embedding_dimensions: int = 768
 
     # Backend
@@ -54,6 +57,15 @@ class Settings(BaseSettings):
 
     # Frontend
     frontend_url: str = "http://localhost:5173"
+
+    @model_validator(mode="after")
+    def _default_embedding_base_url(self) -> "Settings":
+        if not self.embedding_base_url.strip():
+            self.embedding_base_url = self.local_llm_base_url.rstrip("/")
+        else:
+            self.embedding_base_url = self.embedding_base_url.rstrip("/")
+        self.local_llm_base_url = self.local_llm_base_url.rstrip("/")
+        return self
 
     @property
     def database_url(self) -> str:

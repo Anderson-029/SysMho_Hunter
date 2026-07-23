@@ -3,7 +3,7 @@
  * Renderiza LoginPage mientras se inicializa o si no hay token
  */
 
-import { ReactNode, useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { LoginPage } from './LoginPage'
 

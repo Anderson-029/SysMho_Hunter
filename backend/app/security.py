@@ -174,7 +174,7 @@ async def auth_middleware(request: Request, call_next):
     3. Si es OPTIONS (CORS preflight) → autorizado
     4. Sino → 401 Unauthorized
     """
-    # Rutas públicas (patrones base, sin trailing slash)
+    # Rutas públicas (exactas, con o sin trailing slash)
     public_prefixes = {
         "/health",
         "/auth/login",

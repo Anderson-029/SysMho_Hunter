@@ -32,13 +32,15 @@ async def lifespan(app: FastAPI):
             " (ejecuta: uv run python ml/training/train_models.py)"
         )
 
-    # Verificar Ollama
+    # Verificar LLM local (OpenAI-compatible)
     from app.brain.local_llm import local_llm
 
     if await local_llm.is_available():
-        print(f"✅ Ollama disponible ({settings.ollama_model})")
+        print(f"✅ Local LLM disponible ({settings.local_llm_model})")
     else:
-        print("⚠️  Ollama no disponible — cerebro usará nivel 3 (cloud)")
+        print(
+            "⚠️  Local LLM no disponible — cerebro usará nivel 3 (cloud)"
+        )
 
     yield
 
@@ -58,29 +60,23 @@ app = FastAPI(
 )
 
 # =====================================================================
-# Middleware de normalización de trailing slash para POST/DELETE/PATCH
+# Middleware: trailing slash solo en rutas auth que lo requieren
 # =====================================================================
-async def normalize_trailing_slash(request, call_next):
-    """Normaliza trailing slash para GET/POST/DELETE/PATCH.
+# No reescribir rutas OpenAPI sin slash (p.ej. /api/v1/brain/status)
+# — eso provoca 307 en bucle con redirect_slashes de Starlette.
+_TRAILING_SLASH_PATHS = {
+    "/auth/login",
+    "/auth/refresh",
+    "/auth/logout",
+}
 
-    Convierte /auth/login a /auth/login/ (con slash) para que todos
-    los endpoints sean consistentes.
-    Ejecuta ANTES de auth_middleware para que no se pierda autenticación.
-    """
+
+async def normalize_trailing_slash(request, call_next):
+    """Añade trailing slash solo a rutas auth canónicas sin slash."""
     if request.method in ("GET", "POST", "DELETE", "PATCH"):
         path = request.url.path
-        # Agregar trailing slash si no lo tiene (excepto en rutas especiales)
-        if (
-            not path.endswith("/")
-            and not path.endswith(".json")
-            and path not in ("/ws", "/ws/live", "/health")
-            and "/docs" not in path
-            and "/redoc" not in path
-            and "/openapi" not in path
-        ):
-            # Reconstruir la URL con trailing slash
+        if path in _TRAILING_SLASH_PATHS:
             request.scope["path"] = path + "/"
-
     return await call_next(request)
 
 
@@ -123,7 +119,7 @@ async def health_check() -> dict:
         "version": "0.2.0",
         "database": db_status,
         "ml_engine": "loaded" if ml_engine.is_available else "unavailable",
-        "ollama": "available"
+        "local_llm": "available"
         if await local_llm.is_available()
         else "unavailable",
     }

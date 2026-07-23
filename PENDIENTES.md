@@ -1,6 +1,21 @@
 # 📋 PENDIENTES — SysMho Hunter v0.3.0-dev
 
-> Roadmap de mejoras, features y fixes. Actualizado: 22 Julio 2026
+> Roadmap de mejoras, features y fixes. Actualizado: 23 Julio 2026
+
+---
+
+## 🔧 FOUNDATION — Bases robustas (PRIORIDAD, Julio 2026)
+
+Congelar Neo4j / agentes / scrapers hasta cerrar esta fase.
+
+- [x] Docker Compose: Postgres + Qdrant pinneados (`postgres:16-alpine`, `qdrant:v1.13.4`)
+- [x] Local LLM desacoplado de Ollama → API OpenAI-compatible (LM Studio / Ollama /v1)
+- [x] Embeddings OpenAI-compatible (`/v1/embeddings`)
+- [x] Scripts sin passwords hardcodeados (`start_sysmho.sh`, `seed_db.sh`)
+- [x] `scripts/doctor.sh` — diagnóstico de bases
+- [x] Fix trailing slash middleware (sin 307 en brain/status)
+- [x] Deps actualizadas (`uv lock --upgrade`, `npm update`)
+- [x] Tests unitarios LocalLLM/Embeddings + docs `docs/LM_STUDIO.md`
 
 ---
 
@@ -13,25 +28,23 @@ desde cero. Contexto completo y decisiones en `HANDOFF.md`.
 ### Fase 1.1 — RAG Core ✅ COMPLETADA (22 Julio 2026)
 - [x] Qdrant corriendo en Docker (`docker-compose.yml`, puerto 6333)
 - [x] `qdrant-client` instalado en backend
-- [x] Embeddings: `nomic-embed-text` vía Ollama (768 dims)
+- [x] Embeddings vía API OpenAI-compatible (antes Ollama nativo)
 - [x] Módulo `backend/app/rag/` (qdrant_client, embeddings, indexer, retriever)
 - [x] Script `scripts/ingest_knowledge.py` (indexación batch de `knowledge/*.md`)
 - [x] RAG integrado a `BrainRouter` (Nivel 2/3), best-effort, no bloqueante
-- [x] Validado end-to-end: query en lenguaje natural → contexto real → Ollama razona con él
-- [x] Tests del cerebro (12/12) sin regresiones
-- [x] BD de tests `sysmho_hunter_test` creada (no existía, deuda técnica resuelta de paso)
+- [x] Tests del cerebro sin regresiones de contrato
 
-### Fase 1.2 — Poblar Knowledge Base ⏳ PENDIENTE (siguiente paso)
+### Fase 1.2 — Poblar Knowledge Base ⏳ PAUSADA hasta cerrar Foundation
 - [ ] Scraper PortSwigger Web Security Academy (rate-limited, uso personal — NO redistribuir)
 - [ ] Estructurar findings de labs (`labs/devil`) como documentos indexables
 - [ ] Endpoint REST `/api/v1/rag/search` (para probar desde Swagger/frontend)
 - [ ] Panel RAG en dashboard (mostrar de dónde sale cada respuesta del cerebro)
 
-### Fase 2 — Neo4j (Knowledge Graph) — NO EMPEZADA
+### Fase 2 — Neo4j (Knowledge Graph) — PAUSADA
 - [ ] Después de tener RAG poblado con contenido real (Neo4j vacío es inútil)
 
-### Fase 3 — Fine-tuning + Agentes especializados — NO EMPEZADA
-- [ ] Cambio de modelo LLM local: Llama 3.1 8B → Qwen 3.5 9B (evaluar después de validar RAG)
+### Fase 3 — Fine-tuning + Agentes especializados — PAUSADA
+- [ ] Evaluar modelos vía LM Studio / OpenAI-compat (sin amarrar a un vendor)
 - [ ] Agentes: API Analyzer, Auth Analyzer, Recon Analyzer
 
 ---

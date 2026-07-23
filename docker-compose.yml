@@ -1,6 +1,36 @@
+# SysMho Hunter — Infraestructura local (Postgres + Qdrant)
+# Uso: docker compose up -d
+# Backend/frontend y el LLM (LM Studio / Ollama OpenAI-compat) corren en el host.
+#
+# Conflicto de puerto: si ya hay un Postgres del sistema en :5432, deténlo
+# antes de levantar este compose (Compose es la fuente de verdad del proyecto).
+
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sysmho_postgres
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-sysmho_hunter}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-sysmho_hunter}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.13.4
     container_name: sysmho_qdrant
     restart: unless-stopped
     ports:
@@ -8,6 +38,14 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    # Imagen mínima: healthcheck TCP; doctor.sh valida /readyz por HTTP
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
 volumes:
+  postgres_data:
   qdrant_data:

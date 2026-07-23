@@ -1,14 +1,14 @@
 """
 LocalLLM — Nivel 2 del cerebro híbrido.
-Cliente HTTP hacia Ollama (localhost:11434).
-Soporta tool use / JSON mode de Llama 3.1 8B.
+Cliente HTTP hacia cualquier servidor OpenAI-compatible
+(LM Studio, Ollama /v1, vLLM, etc.).
 """
 
 import json
 import logging
 import time
 
-import aiohttp
+import httpx
 
 from app.config import settings
 
@@ -23,14 +23,21 @@ class LocalLLMError(Exception):
 
 
 class LocalLLM:
-    """Wrapper async sobre la API de Ollama."""
+    """Wrapper async sobre chat/completions OpenAI-compatible."""
 
     def __init__(self):
-        self.base_url = settings.ollama_base_url
-        self.model = settings.ollama_model
+        self.base_url = settings.local_llm_base_url.rstrip("/")
+        self.model = settings.local_llm_model
+        self.api_key = settings.local_llm_api_key
+
+    def _headers(self) -> dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
 
     async def is_available(self) -> bool:
-        """Verifica si Ollama está corriendo. Resultado cacheado 30s."""
+        """Verifica si el servidor local responde. Cacheado 30s."""
         now = time.monotonic()
         if (
             now - _availability_cache["checked_at"]
@@ -38,14 +45,15 @@ class LocalLLM:
             return _availability_cache["available"]
 
         try:
-            async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=3)
-            ) as session:
-                async with session.get(f"{self.base_url}/api/tags") as resp:
-                    available = resp.status == 200
-                    _availability_cache["available"] = available
-                    _availability_cache["checked_at"] = now
-                    return available
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                resp = await client.get(
+                    f"{self.base_url}/models",
+                    headers=self._headers(),
+                )
+                available = resp.status_code == 200
+                _availability_cache["available"] = available
+                _availability_cache["checked_at"] = now
+                return available
         except Exception:
             _availability_cache["available"] = False
             _availability_cache["checked_at"] = now
@@ -53,57 +61,85 @@ class LocalLLM:
 
     async def complete(self, prompt: str, max_tokens: int = 512) -> dict:
         """
-        Envía prompt a Ollama y retorna respuesta parseada.
-        Usa format=json para forzar JSON válido en la respuesta.
+        Envía prompt al LLM local y retorna respuesta parseada como dict.
+        Pide JSON vía response_format; si el servidor no lo soporta,
+        reintenta sin ese campo y parsea el texto.
         """
         start = time.monotonic()
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "format": "json",
-            "stream": False,
-            "options": {
-                "num_predict": max_tokens,
-                "temperature": 0.1,
-                "num_thread": 8,
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a security analysis assistant. "
+                    "Always respond with a single valid JSON object only."
+                ),
             },
+            {"role": "user", "content": prompt},
+        ]
+        payload: dict = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.1,
+            "stream": False,
+            "response_format": {"type": "json_object"},
         }
 
         try:
-            async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=120)
-            ) as session:
-                async with session.post(
-                    f"{self.base_url}/api/generate", json=payload
-                ) as resp:
-                    if resp.status != 200:
-                        raise LocalLLMError(f"Ollama HTTP {resp.status}")
-                    data = await resp.json()
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                resp = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=self._headers(),
+                    json=payload,
+                )
+                # Algunos servidores (LM Studio antiguo) no soportan
+                # response_format — reintentar sin él.
+                if resp.status_code in (400, 422):
+                    payload.pop("response_format", None)
+                    resp = await client.post(
+                        f"{self.base_url}/chat/completions",
+                        headers=self._headers(),
+                        json=payload,
+                    )
+                if resp.status_code != 200:
+                    raise LocalLLMError(
+                        f"Local LLM HTTP {resp.status_code}: {resp.text[:200]}"
+                    )
+                data = resp.json()
 
-            raw_text = data.get("response", "")
+            choices = data.get("choices") or []
+            if not choices:
+                raise LocalLLMError("Respuesta sin choices")
+            raw_text = (
+                choices[0].get("message", {}).get("content") or ""
+            ).strip()
             latency_ms = int((time.monotonic() - start) * 1000)
 
-            # Limpiar y parsear JSON
-            clean = raw_text.strip()
+            clean = raw_text
             if clean.startswith("```"):
-                clean = clean.split("```")[1]
+                parts = clean.split("```")
+                clean = parts[1] if len(parts) > 1 else clean
                 if clean.startswith("json"):
                     clean = clean[4:]
+            clean = clean.strip()
 
             result = json.loads(clean)
+            usage = data.get("usage") or {}
             result["_meta"] = {
                 "model": self.model,
                 "latency_ms": latency_ms,
-                "tokens": data.get("eval_count", 0),
+                "tokens": usage.get("total_tokens", 0),
             }
             return result
 
         except json.JSONDecodeError as e:
-            logger.warning(f"[LocalLLM] JSON inválido en respuesta: {e}")
-            raise LocalLLMError(f"Respuesta no es JSON válido: {e}")
+            logger.warning("[LocalLLM] JSON inválido en respuesta: %s", e)
+            raise LocalLLMError(f"Respuesta no es JSON válido: {e}") from e
+        except LocalLLMError:
+            raise
         except Exception as e:
-            logger.error(f"[LocalLLM] Error: {e}")
-            raise LocalLLMError(str(e))
+            logger.error("[LocalLLM] Error: %s", e)
+            raise LocalLLMError(str(e)) from e
 
 
 # Singleton global

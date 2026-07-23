@@ -1,7 +1,7 @@
 """
 BrainRouter — Orquesta los 3 niveles del cerebro híbrido.
 Nivel 1: MLEngine (scikit-learn, <10ms)
-Nivel 2: LocalLLM (Ollama Llama 3.1 8B Q6_K, ~20-40s)
+Nivel 2: LocalLLM (OpenAI-compatible — LM Studio / Ollama /v1, ~20-40s)
 Nivel 3: CloudClient (Gemini 2.0 Flash → Claude Haiku, ~1-3s)
 """
 
@@ -87,7 +87,7 @@ class BrainRouter:
                 )
                 return ml_result
 
-        # Nivel 2: LocalLLM (si no es tarea LLM-only y Ollama disponible)
+        # Nivel 2: LocalLLM (si no es tarea LLM-only y hay servidor local)
         rag_context = ""
         if task_type not in ML_TASKS:
             rag_context = await self._fetch_rag_context(
@@ -120,7 +120,7 @@ class BrainRouter:
                             latency_ms=total_latency,
                             confidence=confidence,
                             reason=(
-                                f"Ollama available, confidence "
+                                f"Local LLM available, confidence "
                                 f"{confidence:.3f}"
                                 f" >= {LOCAL_CONFIDENCE_THRESHOLD}"
                             ),
@@ -134,7 +134,7 @@ class BrainRouter:
                             latency_ms=0,
                             confidence=confidence,
                             reason=(
-                                f"Ollama confidence {confidence:.3f} "
+                                f"Local LLM confidence {confidence:.3f} "
                                 f"< {LOCAL_CONFIDENCE_THRESHOLD}. "
                                 f"Escalando a Nivel 3."
                             ),
@@ -156,7 +156,7 @@ class BrainRouter:
                     level=3,
                     model="cloud",
                     latency_ms=0,
-                    reason="Ollama no disponible. Escalando a Nivel 3.",
+                    reason="Local LLM no disponible. Escalando a Nivel 3.",
                 )
 
         # Nivel 3: Cloud (siempre disponible como último recurso)

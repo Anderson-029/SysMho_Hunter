@@ -146,6 +146,15 @@ async def client(db: AsyncSession) -> AsyncClient:
 @pytest_asyncio.fixture
 async def admin_user(db: AsyncSession) -> User:
     """Usuario admin listo para usar en tests."""
+    from sqlalchemy import select
+
+    existing = await db.execute(
+        select(User).where(User.username == "anderson_test")
+    )
+    user = existing.scalar_one_or_none()
+    if user is not None:
+        return user
+
     user = User(
         id=uuid.uuid4(),
         username="anderson_test",

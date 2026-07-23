@@ -5,7 +5,6 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { api } from '../api/client'
 
 export interface UserMe {
   id: string

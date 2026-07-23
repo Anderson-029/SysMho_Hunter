@@ -126,7 +126,7 @@ bash ../scripts/seed_db.sh
 | Componente | Responsabilidad |
 |-----------|-----------------|
 | `qdrant_client.py` | `QdrantStore`: colección `security_knowledge`, upsert/search de vectores |
-| `embeddings.py` | `EmbeddingClient`: wrapper async sobre Ollama `/api/embeddings` (nomic-embed-text, 768 dims) |
+| `embeddings.py` | `EmbeddingClient`: wrapper async OpenAI-compatible `/embeddings` |
 | `indexer.py` | Parser de Markdown+frontmatter (`knowledge/*.md`) → chunking por sección `##` → indexación |
 | `retriever.py` | `retrieve(query)` + `format_context()` — usado por `BrainRouter` en Nivel 2/3 |
 

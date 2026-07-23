@@ -11,8 +11,8 @@
 
 - **Backend:** FastAPI + SQLAlchemy async + asyncpg + PostgreSQL, gestionado con `uv`
 - **Frontend:** React 19 + Vite + TypeScript + Tailwind CSS + Zustand
-- **Cerebro:** Híbrido 3 niveles — scikit-learn → Ollama Llama 3.1 8B Q6_K → Gemini 2.0 Flash
-- **RAG:** Qdrant (Docker, local) + embeddings `nomic-embed-text` (Ollama) — enriquece Nivel 2/3 del cerebro con contexto de knowledge base (OWASP/PortSwigger/findings propios)
+- **Cerebro:** Híbrido 3 niveles — scikit-learn → Local LLM OpenAI-compatible (LM Studio / Ollama /v1) → Gemini 2.0 Flash
+- **RAG:** Qdrant (Docker) + embeddings OpenAI-compatible — enriquece Nivel 2/3 del cerebro con contexto de knowledge base (OWASP/PortSwigger/findings propios)
 - **Arsenal:** 19 herramientas CLI (nmap, nuclei, ffuf, sqlmap, subfinder, amass, etc.)
 - **BD:** PostgreSQL, 12 tablas con UUID como PKs
 
@@ -68,12 +68,13 @@ Cada línea de código, cada decisión arquitectónica, cada feature debe adheri
 |---------|--------|---------------------|
 | Backend API (FastAPI) | 8000 | `cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload` |
 | Frontend UI (React+Vite) | 5173 | `cd frontend && npm run dev` |
-| PostgreSQL | 5432 | `sudo systemctl start postgresql` |
-| Ollama (LLM local) | 11434 | `ollama serve` |
-| Qdrant (vector DB, RAG) | 6333 | `docker compose up -d qdrant` |
+| PostgreSQL | 5432 | `docker compose up -d` (servicio `postgres`) |
+| Local LLM (OpenAI-compat) | 1234 (LM Studio) / 11434 (Ollama /v1) | LM Studio Local Server u otro |
+| Qdrant (vector DB, RAG) | 6333 | `docker compose up -d` |
 
-**Arranque completo:** `bash scripts/start_hunter.sh`
-**Parada completa:** `bash scripts/stop_hunter.sh`
+**Arranque completo:** `bash scripts/start_sysmho.sh`
+**Parada completa:** `bash scripts/stop_sysmho.sh`
+**Diagnóstico:** `bash scripts/doctor.sh`
 
 ---
 
@@ -99,9 +100,10 @@ bash scripts/install_tools.sh  # instalar arsenal CLI
 bash scripts/seed_db.sh        # sembrar agent_config inicial
 
 # RAG (Qdrant + knowledge base)
-docker compose up -d qdrant                       # levantar vector DB
-ollama pull nomic-embed-text                       # modelo de embeddings (una vez)
-cd backend && uv run python ../scripts/ingest_knowledge.py  # indexar knowledge/
+docker compose up -d                              # Postgres + Qdrant
+# Configurar LOCAL_LLM_* en backend/.env — ver docs/LM_STUDIO.md
+cd backend && uv run python ../scripts/ingest_knowledge.py
+bash scripts/doctor.sh                            # diagnóstico de bases
 ```
 
 ---
@@ -110,7 +112,7 @@ cd backend && uv run python ../scripts/ingest_knowledge.py  # indexar knowledge/
 
 ```
 Nivel 1: MLEngine (scikit-learn, <10ms)          → classify_severity, score_vuln, prioritize
-Nivel 2: LocalLLM (Llama 3.1 8B Q6_K, Ollama)   → detect_patterns, analyze_response
+Nivel 2: LocalLLM (OpenAI-compatible)            → detect_patterns, analyze_response
 Nivel 3: CloudClient (Gemini 2.0 Flash) → draft_report, tareas complejas
 ```
 

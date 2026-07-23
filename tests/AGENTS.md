@@ -47,7 +47,7 @@ tests/
 
 Variable de entorno para apuntar a BD separada:
 ```bash
-TEST_DATABASE_URL=postgresql+asyncpg://postgres:ander123@127.0.0.1/sysmho_hunter_test
+TEST_DATABASE_URL=postgresql+asyncpg://postgres:TU_PASSWORD@127.0.0.1/sysmho_hunter_test
 ```
 
 La BD de tests se crea automáticamente en `conftest.py` con `create_all()` y se limpia entre tests con rollback de transacciones.
@@ -58,5 +58,5 @@ La BD de tests se crea automáticamente en `conftest.py` con `create_all()` y se
 |-------------|----------------|
 | Binarios CLI (nmap, nuclei, etc.) | Base de datos PostgreSQL |
 | Gemini API / Anthropic API | SQLAlchemy async session |
-| Ollama HTTP calls | Lógica de negocio propia |
+| Ollama HTTP calls / Local LLM | Lógica de negocio propia |
 | Filesystem writes de herramientas | Validación de schemas Pydantic |
