@@ -2,10 +2,11 @@
 
 ## Identidad
 
-**SysMho Hunter v0.2.0 — Agente Autónomo de Pentesting y Bug Bounty.**
+**SysMho Hunter v0.3.0-dev — Agente Autónomo de Pentesting y Bug Bounty.**
 
 Stack: Python 3.12 + FastAPI + PostgreSQL + React/Vite + uv
 Cerebro: Híbrido 3 niveles — scikit-learn → Llama 3.1 8B (Ollama) → Gemini 2.0 Flash
+RAG: Qdrant (Docker) + embeddings nomic-embed-text (Ollama) — enriquece Nivel 2/3 con contexto técnico
 Arsenal: nmap, ffuf, feroxbuster, nuclei, subfinder, amass + herramientas Kali/Parrot
 Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e integración con HackerOne.
 
@@ -32,12 +33,14 @@ Propósito: Automatizar reconocimiento web, análisis de vulnerabilidades e inte
 | **Frontend UI** | React + Vite | 5173 | `cd frontend && npm run dev` |
 | **PostgreSQL** | Sistema / servicio | 5432 | `sudo systemctl start postgresql` |
 | **Ollama** | LLM local | 11434 | `ollama serve` |
+| **Qdrant** | Vector DB (RAG) | 6333 | `docker compose up -d qdrant` |
 
 **Comunicación:**
 - HTTP REST: Frontend → `/api/v1/*` endpoints en backend
 - WebSocket: Frontend ← `/ws/live` stream de logs en tiempo real
 - asyncpg pool: Backend ↔ PostgreSQL
 - HTTP: BrainRouter → Ollama `localhost:11434/api/chat`
+- HTTP: BrainRouter → RAG (`app/rag/retriever.py`) → Qdrant `localhost:6333` (best-effort, no bloqueante)
 
 ---
 

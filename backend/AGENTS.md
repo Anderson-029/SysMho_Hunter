@@ -13,6 +13,7 @@ backend/
 │   ├── schemas/         # Pydantic v2 schemas para request/response
 │   ├── services/        # Lógica de negocio (ScanService, ReportService)
 │   ├── brain/           # Cerebro híbrido 3 niveles
+│   ├── rag/             # QdrantStore, embeddings, indexer, retriever (RAG)
 │   ├── recon/           # ReconEngine + BaseTool + ToolRegistry + tools/
 │   └── websocket/       # /ws/live — stream de logs en tiempo real
 ├── migrations/          # Alembic (env.py configurado para async SQLAlchemy)
@@ -119,6 +120,21 @@ bash ../scripts/seed_db.sh
 - WebSocket en `app/websocket/router.py`, prefijo `/ws`
 - PKs: UUID v4 generados por PostgreSQL (`gen_random_uuid()`)
 - Timestamps: `created_at` y `updated_at` con `DEFAULT NOW()` en BD
+
+## RAG (`app/rag/`)
+
+| Componente | Responsabilidad |
+|-----------|-----------------|
+| `qdrant_client.py` | `QdrantStore`: colección `security_knowledge`, upsert/search de vectores |
+| `embeddings.py` | `EmbeddingClient`: wrapper async sobre Ollama `/api/embeddings` (nomic-embed-text, 768 dims) |
+| `indexer.py` | Parser de Markdown+frontmatter (`knowledge/*.md`) → chunking por sección `##` → indexación |
+| `retriever.py` | `retrieve(query)` + `format_context()` — usado por `BrainRouter` en Nivel 2/3 |
+
+Indexar contenido: `cd backend && uv run python ../scripts/ingest_knowledge.py`
+
+**Regla:** RAG es siempre *best-effort*. Si Qdrant no responde, el cerebro
+debe seguir funcionando sin contexto — nunca debe lanzar una excepción que
+rompa el pipeline de análisis (ver `try/except` en `BrainRouter._fetch_rag_context`).
 
 ## Agent Config — Valores Clave
 

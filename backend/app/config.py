@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1:8b-instruct-q6_K"
 
+    # RAG — Qdrant + embeddings
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "security_knowledge"
+    embedding_model: str = "nomic-embed-text"
+    embedding_dimensions: int = 768
+
     # Backend
     # Localhost por defecto — cambiar en producción a 0.0.0.0
     backend_host: str = "127.0.0.1"

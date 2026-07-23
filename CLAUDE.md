@@ -7,11 +7,12 @@
 
 ## Identidad del Proyecto
 
-**SysMho Hunter v0.2.0** — Agente autónomo de pentesting y bug bounty para HackerOne.
+**SysMho Hunter v0.3.0-dev** — Agente autónomo de pentesting y bug bounty para HackerOne, con capa RAG en construcción.
 
 - **Backend:** FastAPI + SQLAlchemy async + asyncpg + PostgreSQL, gestionado con `uv`
 - **Frontend:** React 19 + Vite + TypeScript + Tailwind CSS + Zustand
 - **Cerebro:** Híbrido 3 niveles — scikit-learn → Ollama Llama 3.1 8B Q6_K → Gemini 2.0 Flash
+- **RAG:** Qdrant (Docker, local) + embeddings `nomic-embed-text` (Ollama) — enriquece Nivel 2/3 del cerebro con contexto de knowledge base (OWASP/PortSwigger/findings propios)
 - **Arsenal:** 19 herramientas CLI (nmap, nuclei, ffuf, sqlmap, subfinder, amass, etc.)
 - **BD:** PostgreSQL, 12 tablas con UUID como PKs
 
@@ -69,6 +70,7 @@ Cada línea de código, cada decisión arquitectónica, cada feature debe adheri
 | Frontend UI (React+Vite) | 5173 | `cd frontend && npm run dev` |
 | PostgreSQL | 5432 | `sudo systemctl start postgresql` |
 | Ollama (LLM local) | 11434 | `ollama serve` |
+| Qdrant (vector DB, RAG) | 6333 | `docker compose up -d qdrant` |
 
 **Arranque completo:** `bash scripts/start_hunter.sh`
 **Parada completa:** `bash scripts/stop_hunter.sh`
@@ -95,6 +97,11 @@ npx tsc --noEmit  # verificar TypeScript
 # Herramientas
 bash scripts/install_tools.sh  # instalar arsenal CLI
 bash scripts/seed_db.sh        # sembrar agent_config inicial
+
+# RAG (Qdrant + knowledge base)
+docker compose up -d qdrant                       # levantar vector DB
+ollama pull nomic-embed-text                       # modelo de embeddings (una vez)
+cd backend && uv run python ../scripts/ingest_knowledge.py  # indexar knowledge/
 ```
 
 ---
@@ -106,6 +113,11 @@ Nivel 1: MLEngine (scikit-learn, <10ms)          → classify_severity, score_vu
 Nivel 2: LocalLLM (Llama 3.1 8B Q6_K, Ollama)   → detect_patterns, analyze_response
 Nivel 3: CloudClient (Gemini 2.0 Flash) → draft_report, tareas complejas
 ```
+
+Nivel 2 y 3 reciben contexto adicional de **RAG** (`app/rag/retriever.py`) —
+consulta Qdrant automáticamente antes de construir el prompt. Best-effort:
+si Qdrant no responde, el cerebro sigue funcionando sin contexto (nunca
+bloquea el pipeline).
 
 Umbrales configurables en BD (`agent_config`):
 - `brain.ml_confidence_threshold` (default: 0.85)
@@ -121,11 +133,13 @@ Umbrales configurables en BD (`agent_config`):
 | Modelos ORM | `backend/app/models/` | 12 tablas: targets, scopes, scans, scan_tasks, findings, evidence, pending_actions, reports, report_findings, agent_logs, brain_reasoning, agent_config |
 | Servicios | `backend/app/services/` | ScanService (pipeline 4 fases), ReportService (H1 markdown) |
 | Cerebro | `backend/app/brain/` | BrainRouter, MLEngine, LocalLLM, CloudClient, prompts |
+| RAG | `backend/app/rag/` | QdrantStore, EmbeddingClient, indexer, retriever — enriquece cerebro Nivel 2/3 |
+| Knowledge base | `knowledge/` | Documentos Markdown (frontmatter YAML) indexados en Qdrant: `portswigger/`, `labs_findings/` |
 | Arsenal | `backend/app/recon/` | ReconEngine, BaseTool, ToolRegistry, 19 tools |
 | WebSocket | `backend/app/websocket/` | `/ws/live` — stream de logs en tiempo real |
 | Frontend | `frontend/src/` | components/, stores/ (Zustand), api/, types/ |
 | Tests | `tests/` | pytest-asyncio, BD de tests separada |
-| Scripts | `scripts/` | start, stop, dev, install_tools, seed_db |
+| Scripts | `scripts/` | start, stop, dev, install_tools, seed_db, ingest_knowledge |
 
 ---
 

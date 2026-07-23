@@ -5,8 +5,24 @@ build_report_prompt() — redacción de reporte HackerOne
 """
 
 
+def rag_block(rag_context: str) -> str:
+    """Bloque opcional de contexto RAG, vacío si no hay resultados."""
+    if not rag_context:
+        return ""
+    return f"""
+
+RELEVANT KNOWLEDGE BASE CONTEXT (OWASP/PortSwigger/past findings):
+{rag_context}
+
+Use this context to ground your reasoning in real techniques and \
+terminology when relevant. Do not invent facts not supported by it."""
+
+
 def build_reason_prompt(
-    target_url: str, recon_data: dict, findings: list[dict]
+    target_url: str,
+    recon_data: dict,
+    findings: list[dict],
+    rag_context: str = "",
 ) -> str:
     ports = recon_data.get("ports", [])[:10]
     dirs = recon_data.get("directories", [])[:20]
@@ -26,6 +42,7 @@ DISCOVERED DIRECTORIES (up to 20):
 
 PREVIOUS FINDINGS (up to 5):
 {prev_findings}
+{rag_block(rag_context)}
 
 Respond ONLY with valid JSON matching this exact schema:
 {{
@@ -37,7 +54,9 @@ Respond ONLY with valid JSON matching this exact schema:
 }}"""
 
 
-def build_report_prompt(target: str, finding: dict) -> str:
+def build_report_prompt(
+    target: str, finding: dict, rag_context: str = ""
+) -> str:
     return f"""You are a professional Bug Bounty report writer \
 for HackerOne.
 Write a high-quality report based on this finding.
@@ -52,6 +71,7 @@ FINDING:
 - Proof of Concept: {finding.get("proof_of_concept", "N/A")}
 - CVSS Score: {finding.get("cvss_score", "N/A")}
 - CWE: {finding.get("cwe_id", "N/A")}
+{rag_block(rag_context)}
 
 Write the report in Markdown with these exact sections:
 ## Summary

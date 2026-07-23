@@ -13,7 +13,12 @@ from datetime import datetime, timezone
 from app.brain.cloud_client import CloudClientError, cloud_client
 from app.brain.local_llm import LocalLLMError, local_llm
 from app.brain.ml_engine import ml_engine
-from app.brain.prompts import build_reason_prompt, build_report_prompt
+from app.brain.prompts import (
+    build_reason_prompt,
+    build_report_prompt,
+    rag_block,
+)
+from app.rag.retriever import format_context, retrieve
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +88,16 @@ class BrainRouter:
                 return ml_result
 
         # Nivel 2: LocalLLM (si no es tarea LLM-only y Ollama disponible)
+        rag_context = ""
         if task_type not in ML_TASKS:
+            rag_context = await self._fetch_rag_context(
+                task_type, input_data
+            )
             if await local_llm.is_available():
                 try:
-                    prompt = self._build_prompt(task_type, input_data)
+                    prompt = self._build_prompt(
+                        task_type, input_data, rag_context
+                    )
                     llm_result = await local_llm.complete(prompt)
                     confidence = llm_result.get(
                         "confidence", LOCAL_CONFIDENCE_THRESHOLD
@@ -150,7 +161,7 @@ class BrainRouter:
 
         # Nivel 3: Cloud (siempre disponible como último recurso)
         try:
-            prompt = self._build_prompt(task_type, input_data)
+            prompt = self._build_prompt(task_type, input_data, rag_context)
             expect_json = task_type != "draft_report"
             cloud_result = await cloud_client.complete(
                 prompt, expect_json=expect_json
@@ -225,18 +236,60 @@ class BrainRouter:
                 }
         return None
 
-    def _build_prompt(self, task_type: str, input_data: dict) -> str:
+    async def _fetch_rag_context(
+        self, task_type: str, input_data: dict
+    ) -> str:
+        """Consulta la knowledge base (Qdrant) para enriquecer el prompt.
+
+        Best-effort: si Qdrant/embeddings fallan, retorna "" y el
+        cerebro sigue funcionando sin contexto (RAG nunca es
+        bloqueante para el pipeline de análisis).
+        """
+        query = self._build_rag_query(task_type, input_data)
+        if not query:
+            return ""
+
+        try:
+            results = await retrieve(query, limit=3, score_threshold=0.5)
+            return format_context(results)
+        except Exception as e:
+            logger.warning(f"[Brain] RAG no disponible: {e}")
+            return ""
+
+    def _build_rag_query(self, task_type: str, input_data: dict) -> str:
+        """Deriva el texto de búsqueda RAG según el tipo de tarea."""
+        if task_type == "reason_next_steps":
+            findings = input_data.get("findings", [])
+            titles = " ".join(f.get("title", "") for f in findings[:3])
+            return f"{input_data.get('target_url', '')} {titles}".strip()
+        elif task_type == "draft_report":
+            finding = input_data.get("finding", {})
+            return (
+                f"{finding.get('vuln_type', '')} "
+                f"{finding.get('title', '')}"
+            ).strip()
+        elif task_type == "analyze_response":
+            return str(input_data.get("body", ""))[:300]
+        elif task_type == "detect_patterns":
+            return input_data.get("description", "")
+        return ""
+
+    def _build_prompt(
+        self, task_type: str, input_data: dict, rag_context: str = ""
+    ) -> str:
         """Construye el prompt para LLM según el tipo de tarea."""
         if task_type == "reason_next_steps":
             return build_reason_prompt(
                 target_url=input_data.get("target_url", ""),
                 recon_data=input_data.get("recon_data", {}),
                 findings=input_data.get("findings", []),
+                rag_context=rag_context,
             )
         elif task_type == "draft_report":
             return build_report_prompt(
                 target=input_data.get("target", ""),
                 finding=input_data.get("finding", {}),
+                rag_context=rag_context,
             )
         elif task_type == "analyze_response":
             body = str(input_data.get("body", ""))[:2000]
@@ -245,7 +298,8 @@ class BrainRouter:
                 f"Target: {input_data.get('url', '')}\n"
                 f"Response Status: {input_data.get('status_code', '')}\n"
                 f"Response Headers: {input_data.get('headers', {})}\n"
-                f"Response Body (first 2000 chars): {body}\n\n"
+                f"Response Body (first 2000 chars): {body}\n"
+                f"{rag_block(rag_context)}\n\n"
                 'Respond with JSON: {"vulnerabilities": [...],'
                 ' "risk_assessment": "...", "confidence": 0.0-1.0}'
             )
@@ -253,6 +307,7 @@ class BrainRouter:
             desc = input_data.get("description", "")
             return (
                 f"Detect vulnerability patterns in this text: {desc}\n"
+                f"{rag_block(rag_context)}\n"
                 'Respond with JSON: {"vuln_type":'
                 ' "xss|sqli|ssrf|rce|idor|lfi|other",'
                 ' "confidence": 0.0-1.0, "reasoning": "..."}'

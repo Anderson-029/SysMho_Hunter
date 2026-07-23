@@ -12,6 +12,10 @@ BrainRouter.route(task_type, input_data)
     Tareas HYBRID_TASKS: detect_patterns (primario)
     │
     ▼ (si confianza < 0.85)
+[RAG] app/rag/retriever.py → Qdrant (best-effort, no bloqueante)
+    Enriquece el prompt con contexto de knowledge base antes de Nivel 2/3
+    │
+    ▼
 [Nivel 2] LocalLLM — Ollama localhost:11434
     Modelo: llama3.1:8b-instruct-q6_K
     Umbral confianza: 0.70 (configurable → brain.local_llm_confidence_threshold)
@@ -23,6 +27,22 @@ BrainRouter.route(task_type, input_data)
     Si cuota agotada → retorna error estructurado, sin crash
     Tareas LLM_TASKS: draft_report, analyze_response, cualquier tarea compleja
 ```
+
+## RAG — Contexto de Knowledge Base (Nivel 2/3)
+
+`BrainRouter._fetch_rag_context(task_type, input_data)` consulta
+`app/rag/retriever.py` **antes** de construir el prompt para Nivel 2/3
+(nunca para Nivel 1, que es puramente ML). El query de búsqueda se deriva
+según la tarea (`_build_rag_query`): título del target + findings para
+`reason_next_steps`, tipo de vuln para `draft_report`, descripción cruda
+para `detect_patterns`, body HTTP para `analyze_response`.
+
+El contexto recuperado se inyecta en el prompt vía `prompts.rag_block()`.
+Si Qdrant no responde o no hay resultados relevantes (`score < 0.5`), el
+contexto es `""` y el cerebro sigue funcionando exactamente igual que sin
+RAG — **nunca debe romper el flujo** (ver `try/except Exception` en
+`_fetch_rag_context`, deliberadamente amplio porque cualquier fallo de
+Qdrant/embeddings debe degradar a "sin contexto", no propagar error).
 
 ## Tareas por Categoría
 

@@ -1,6 +1,38 @@
-# 📋 PENDIENTES — SysMho Hunter v0.2.0
+# 📋 PENDIENTES — SysMho Hunter v0.3.0-dev
 
-> Roadmap de mejoras, features y fixes. Actualizado: 12 Abril 2026
+> Roadmap de mejoras, features y fixes. Actualizado: 22 Julio 2026
+
+---
+
+## 🔄 EN PROGRESO — Fase RAG "Esteroides" (Julio 2026)
+
+Evolución arquitectónica: agregar RAG (Qdrant) + Knowledge Graph (Neo4j) +
+agentes especializados al SysMho Hunter existente, en vez de reconstruir
+desde cero. Contexto completo y decisiones en `HANDOFF.md`.
+
+### Fase 1.1 — RAG Core ✅ COMPLETADA (22 Julio 2026)
+- [x] Qdrant corriendo en Docker (`docker-compose.yml`, puerto 6333)
+- [x] `qdrant-client` instalado en backend
+- [x] Embeddings: `nomic-embed-text` vía Ollama (768 dims)
+- [x] Módulo `backend/app/rag/` (qdrant_client, embeddings, indexer, retriever)
+- [x] Script `scripts/ingest_knowledge.py` (indexación batch de `knowledge/*.md`)
+- [x] RAG integrado a `BrainRouter` (Nivel 2/3), best-effort, no bloqueante
+- [x] Validado end-to-end: query en lenguaje natural → contexto real → Ollama razona con él
+- [x] Tests del cerebro (12/12) sin regresiones
+- [x] BD de tests `sysmho_hunter_test` creada (no existía, deuda técnica resuelta de paso)
+
+### Fase 1.2 — Poblar Knowledge Base ⏳ PENDIENTE (siguiente paso)
+- [ ] Scraper PortSwigger Web Security Academy (rate-limited, uso personal — NO redistribuir)
+- [ ] Estructurar findings de labs (`labs/devil`) como documentos indexables
+- [ ] Endpoint REST `/api/v1/rag/search` (para probar desde Swagger/frontend)
+- [ ] Panel RAG en dashboard (mostrar de dónde sale cada respuesta del cerebro)
+
+### Fase 2 — Neo4j (Knowledge Graph) — NO EMPEZADA
+- [ ] Después de tener RAG poblado con contenido real (Neo4j vacío es inútil)
+
+### Fase 3 — Fine-tuning + Agentes especializados — NO EMPEZADA
+- [ ] Cambio de modelo LLM local: Llama 3.1 8B → Qwen 3.5 9B (evaluar después de validar RAG)
+- [ ] Agentes: API Analyzer, Auth Analyzer, Recon Analyzer
 
 ---
 
@@ -185,14 +217,16 @@
 
 - JWT Auth: `backend/app/security.py`, `backend/app/api/v1/auth.py`
 - Brain Router: `backend/app/brain/router.py`
+- RAG: `backend/app/rag/`, `knowledge/`, `docker-compose.yml`
 - Frontend Auth: `frontend/src/stores/authStore.ts`
 - CLAUDE.md: instrucciones maestras del proyecto
+- HANDOFF.md: contexto de la sesión "esteroides RAG" para continuar
 
 ---
 
-**Última actualización:** 12 Abril 2026  
-**Actualizado por:** Claude Haiku 4.5  
-**Estado general:** 
+**Última actualización:** 22 Julio 2026
+**Actualizado por:** Claude Sonnet 5
+**Estado general:**
 - ✅ Fase 1 (Auth JWT) COMPLETADA Y PROBADA
 - ✅ Fase 2 (RBAC) NO APLICA (single-user admin)
 - ✅ Fase 3 (Ollama & IA) COMPLETADA Y PROBADA
@@ -206,4 +240,9 @@
   - 3 bugs críticos solucionados (TTY, trailing slash, printf)
   - Dashboard DELETE fix aplicado
   - 19 herramientas pentesting instaladas
-- ⏳ Fase 5 (Tests & CI) SIGUIENTE
+- ✅ Fase 5 (Tests & CI) — BD de tests creada, tests del cerebro en verde
+- 🔄 Fase RAG "Esteroides" EN PROGRESO
+  - ✅ Fase 1.1: RAG Core (Qdrant + embeddings + integración BrainRouter)
+  - ⏳ Fase 1.2: Poblar knowledge base (SIGUIENTE)
+  - ⏳ Fase 2: Neo4j — no empezada
+  - ⏳ Fase 3: Fine-tuning Qwen 3.5 + agentes — no empezada
