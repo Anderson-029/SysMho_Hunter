@@ -10,8 +10,9 @@ services:
     image: postgres:16-alpine
     container_name: sysmho_postgres
     restart: unless-stopped
+    # Host 5433 por defecto: evita choque con Postgres del sistema en :5432
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PUBLISH_PORT:-5433}:5432"
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}

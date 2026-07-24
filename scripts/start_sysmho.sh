@@ -76,12 +76,15 @@ load_backend_env() {
         log_error "backend/.env no encontrado. Copia backend/.env.example"
         exit 1
     fi
+    # Evitar que variables exportadas en la shell pisen backend/.env
+    unset DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME DB_PUBLISH_PORT \
+        LOCAL_LLM_BASE_URL LOCAL_LLM_API_KEY LOCAL_LLM_MODEL QDRANT_URL
     set -a
     # shellcheck disable=SC1091
     source "$BACKEND_DIR/.env"
     set +a
     DB_HOST="${DB_HOST:-127.0.0.1}"
-    DB_PORT="${DB_PORT:-5432}"
+    DB_PORT="${DB_PORT:-5433}"
     DB_USER="${DB_USER:-postgres}"
     DB_PASSWORD="${DB_PASSWORD:-}"
     DB_NAME="${DB_NAME:-sysmho_hunter}"

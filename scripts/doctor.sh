@@ -22,7 +22,9 @@ ok() { echo -e "${GREEN}[OK]${NC} $1"; PASS=$((PASS + 1)); }
 bad() { echo -e "${RED}[FAIL]${NC} $1"; FAIL=$((FAIL + 1)); }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; WARN=$((WARN + 1)); }
 
-# Cargar backend/.env
+# Cargar backend/.env (sin heredar DB_* de la shell)
+unset DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME LOCAL_LLM_BASE_URL \
+    LOCAL_LLM_API_KEY QDRANT_URL
 if [ -f "backend/.env" ]; then
     set -a
     # shellcheck disable=SC1091
@@ -34,7 +36,7 @@ else
 fi
 
 DB_HOST="${DB_HOST:-127.0.0.1}"
-DB_PORT="${DB_PORT:-5432}"
+DB_PORT="${DB_PORT:-5433}"
 DB_USER="${DB_USER:-postgres}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 DB_NAME="${DB_NAME:-sysmho_hunter}"
@@ -83,7 +85,7 @@ AUTH_HDR=()
 if [ -n "$LOCAL_LLM_API_KEY" ]; then
     AUTH_HDR=(-H "Authorization: Bearer ${LOCAL_LLM_API_KEY}")
 fi
-if curl -sf "${AUTH_HDR[@]}" "$LLM_URL" >/dev/null 2>&1; then
+if curl -sf --max-time 3 "${AUTH_HDR[@]}" "$LLM_URL" >/dev/null 2>&1; then
     ok "Local LLM responde en $LLM_URL"
 else
     warn "Local LLM no responde en $LLM_URL (LM Studio Local Server / Ollama /v1)"
@@ -91,14 +93,14 @@ fi
 
 echo ""
 echo "=== Backend / Frontend ==="
-if curl -sf http://127.0.0.1:8000/health >/dev/null 2>&1; then
-    HEALTH=$(curl -sf http://127.0.0.1:8000/health)
+if curl -sf --max-time 3 http://127.0.0.1:8000/health >/dev/null 2>&1; then
+    HEALTH=$(curl -sf --max-time 3 http://127.0.0.1:8000/health)
     ok "Backend health: $HEALTH"
 else
     warn "Backend no responde en :8000"
 fi
 
-if curl -sf http://localhost:5173/ >/dev/null 2>&1; then
+if curl -sf --max-time 3 http://localhost:5173/ >/dev/null 2>&1; then
     ok "Frontend en :5173"
 else
     warn "Frontend no responde en :5173"
