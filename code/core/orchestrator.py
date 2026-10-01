@@ -132,6 +132,9 @@ class Orchestrator:
         # Análisis con el cerebro (best-effort)
         brain_analysis = await self._analyze(flat)
 
+        # Crafteo de payloads PoC (opt-in, bajo aprobación)
+        payloads_path = await self._craft_payloads(flat)
+
         # Persistir evidencia
         self.output.save_findings(flat)
         report_md = render.build_report(
@@ -142,13 +145,81 @@ class Orchestrator:
         ui.agente(
             f"Listo. Reporte guardado en {ui.BOLD_GREEN}{report_path}{ui.NC}"
         )
+        if payloads_path:
+            ui.agente(f"Payloads PoC en {ui.BOLD_GREEN}{payloads_path}{ui.NC}")
         log_event(
             logger,
             "scan_complete",
             "Scan completado",
             report=str(report_path),
+            payloads=str(payloads_path) if payloads_path else None,
         )
-        return {"findings": flat, "report": str(report_path)}
+        return {
+            "findings": flat,
+            "report": str(report_path),
+            "payloads": str(payloads_path) if payloads_path else None,
+        }
+
+    # Severidades para las que ofrecemos crafteo de payloads PoC.
+    _CRAFTABLE = ("critical", "high", "medium")
+    _MAX_CRAFT = 5  # límite para no disparar swaps interminables de modelos
+
+    async def _craft_payloads(self, findings: list[dict]):
+        """Ofrece generar payloads PoC para los hallazgos destacados.
+
+        Opt-in (default False): genera payloads ofensivos (no destructivos)
+        con PayloadCrafter. Best-effort: si el cerebro falla, se omite.
+        Devuelve el path de payloads.md o None.
+        """
+        destacados = [
+            f
+            for f in findings
+            if str(f.get("severity", "")).lower() in self._CRAFTABLE
+        ][: self._MAX_CRAFT]
+        if not destacados:
+            return None
+
+        ui.agente(
+            f"Puedo generar payloads PoC (no destructivos) para "
+            f"{len(destacados)} hallazgo(s) destacado(s). Es una operación "
+            "ofensiva: solo contra tu objetivo autorizado."
+        )
+        if not ui.preguntar("¿Genero los payloads PoC?", default=False):
+            ui.info("Crafteo de payloads omitido.")
+            return None
+
+        crafted: list[tuple[dict, dict]] = []
+        for f in destacados:
+            title = f.get("title", f.get("type", "hallazgo"))
+            ui.agente(f"Generando PoC para: {title}")
+            try:
+                result = await brain_router.route(
+                    "craft_payload",
+                    {"target": self.target, "finding": f},
+                )
+                n = len(result.get("payloads", []))
+                ui.ok(
+                    f"{n} payload(s) · {result.get('agent', '?')} "
+                    f"({result.get('model_used', '?')})"
+                )
+                crafted.append((f, result))
+                log_event(
+                    logger,
+                    "payload_crafted",
+                    f"Payloads generados para {title}",
+                    finding=title,
+                    count=n,
+                    model=result.get("model_used"),
+                )
+            except Exception as e:
+                ui.warn(f"No pude generar payloads para '{title}': {e}")
+                logger.warning(f"[Orchestrator] craft_payload falló: {e}")
+
+        if not crafted:
+            return None
+
+        payloads_md = render.build_payloads(self.target, crafted)
+        return self.output.save_payloads(payloads_md)
 
     async def _analyze(self, findings: list[dict]) -> dict | None:
         """Pide al cerebro próximos pasos. Best-effort: si falla, sigue."""

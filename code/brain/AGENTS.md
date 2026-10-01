@@ -37,7 +37,7 @@ El Nivel 2 no usa un solo modelo: cada `task_type` se enruta a un **agente**
 | ReconAnalyzer | `qwen3:14b` | `reason_next_steps` |
 | CodeAnalyzer | `qwen2.5-coder:14b` | `analyze_response`, `detect_patterns` |
 | ReportWriter | `mistral-small3.2:24b-...` | `draft_report` |
-| PayloadCrafter | `dolphin-mixtral:8x7b` | `craft_payload` *(inactivo: sin flujo aún)* |
+| PayloadCrafter | `dolphin-mixtral:8x7b` | `craft_payload` *(opt-in, bajo aprobación)* |
 
 - Modelos configurables por env (`AGENT_RECON_MODEL`, etc. — ver config.py).
 - Equilibrio velocidad/capacidad: 14b para el trabajo frecuente; 24b/mixtral

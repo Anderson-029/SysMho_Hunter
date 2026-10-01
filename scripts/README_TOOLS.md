@@ -70,19 +70,17 @@ bash scripts/check_tools.sh
 
 ---
 
-## 📊 Verificación Antes de Ejecutar Scans
+## 📊 Verificación Antes de Ejecutar
 
-**SysMho Hunter verifica automáticamente** las herramientas cuando ejecutas:
+Comprueba el arsenal antes de auditar:
 
 ```bash
-bash labs/sysmho_integration.sh auto devil 172.17.0.2 80
+bash scripts/check_tools.sh
 ```
 
 Output:
 ```
 [i] Verificando herramientas de pentesting...
-✓ Backend disponible (http://localhost:8000)
-✓ API Key obtenida
 ✓ Todas las herramientas disponibles
 ```
 
@@ -152,8 +150,8 @@ go install github.com/ffuf/ffuf/v2@latest
 3. Verificar nuevamente:
    bash scripts/check_tools.sh
 
-4. Ejecutar integration.sh:
-   bash labs/sysmho_integration.sh auto devil 172.17.0.2 80
+4. Auditar un lab:
+   sudo python3 hunter.py <IP> --scope scope.txt
 ```
 
 ---
@@ -207,7 +205,6 @@ go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
 - Herramienta de verificación: `scripts/check_tools.sh`
 - Instalador automático: `scripts/install_tools.sh`
-- Integration script: `labs/sysmho_integration.sh`
 
 ---
 

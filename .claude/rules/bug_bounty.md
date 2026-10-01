@@ -47,7 +47,7 @@ Vector 2: Subdomain takeover en dev.target.com (Media, Critical)
 - Documentar CADA REQUEST/RESPONSE relevante (para el reporte)
 - Si se encuentra algo crítico → PARAR y notificar antes de continuar
 
-### FASE 4 — Reporte HackerOne
+### FASE 4 — Reporte de Vulnerabilidad
 
 #### Estructura del Reporte
 ```markdown
@@ -95,7 +95,7 @@ Después de cada reporte, Claude debe:
 5. **Siempre presentar como menú de opciones**, no ejecutar solo
 
 ## Scope y Límites
-- Validar scope ANTES de cualquier acción (tabla `scopes` en BD o programa H1)
+- Validar scope ANTES de cualquier acción (objetivos desde `scope.txt`, `BaseTool._validate_scope()`)
 - Nunca escanear fuera de scope aunque "parezca relacionado"
 - Si hay duda → preguntar antes de actuar
 - Documentar todos los intentos (éxito y fallo) para el reporte

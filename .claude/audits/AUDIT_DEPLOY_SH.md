@@ -1,5 +1,9 @@
 # 🔍 Auditoría: deploy.sh & auto_deploy.sh
 
+> ⚠️ **[HISTÓRICO]** — Auditoría de la etapa web (deploy del backend/servidor)
+> ya eliminada. El proyecto es hoy una herramienta CLI sin deploy de servidor.
+> Ver `.claude/decisions/DECISION_REMOVE_DEPLOY_SH.md`. Se conserva como registro.
+
 **Fecha:** 12 Abril 2026  
 **Estado:** ❌ FALLA CRÍTICA — Problemas en los 5 Pilares  
 **Ejecutor:** Claude Code  

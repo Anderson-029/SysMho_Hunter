@@ -59,6 +59,57 @@ def spoken_summary(findings: list[dict]) -> str:
     )
 
 
+def build_payloads(target: str, crafted: list[tuple[dict, dict]]) -> str:
+    """Genera payloads.md a partir de (finding, resultado_del_agente).
+
+    crafted: lista de (finding, brain_result) donde brain_result trae
+    vuln_type, payloads[], poc_steps.
+    """
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    lines: list[str] = []
+    lines.append(f"# Payloads PoC — {target}")
+    lines.append("")
+    lines.append(f"> Generado por SysMho Hunter · {ts}")
+    lines.append(
+        "> Payloads de prueba de concepto NO destructivos, para uso "
+        "autorizado. Verifícalos antes de enviarlos."
+    )
+    lines.append("")
+    for finding, result in crafted:
+        title = finding.get("title", finding.get("type", "Hallazgo"))
+        vtype = result.get("vuln_type", finding.get("type", "?"))
+        lines.append(f"## {title}")
+        if finding.get("url"):
+            lines.append(f"- **Ubicación:** {finding['url']}")
+        lines.append(f"- **Tipo:** {vtype}")
+        agent = result.get("agent")
+        model = result.get("model_used")
+        if agent or model:
+            lines.append(f"- **Generado por:** {agent} ({model})")
+        lines.append("")
+        payloads = result.get("payloads", [])
+        if not payloads:
+            lines.append("_El agente no devolvió payloads._")
+            lines.append("")
+            continue
+        for i, p in enumerate(payloads, 1):
+            lines.append(f"### Payload {i}")
+            lines.append("```")
+            lines.append(str(p.get("payload", "")))
+            lines.append("```")
+            if p.get("explanation"):
+                lines.append(f"- {p['explanation']}")
+            if p.get("bypass_note"):
+                lines.append(f"- **Bypass:** {p['bypass_note']}")
+            lines.append("")
+        if result.get("poc_steps"):
+            lines.append("**Pasos de reproducción:**")
+            lines.append("")
+            lines.append(str(result["poc_steps"]))
+            lines.append("")
+    return "\n".join(lines)
+
+
 def build_report(
     target: str,
     scope: list[str],

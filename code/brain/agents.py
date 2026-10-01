@@ -68,8 +68,7 @@ REPORT_WRITER = Agent(
     task_types=("draft_report",),
 )
 
-# Definido pero inactivo: no hay task_type 'craft_payload' en el pipeline aún.
-# Queda listo para cuando se añada una fase de crafteo de payloads.
+# Activo: el orquestador ofrece 'craft_payload' tras el análisis (opt-in).
 PAYLOAD_CRAFTER = Agent(
     name="PayloadCrafter",
     model=settings.agent_payload_model,

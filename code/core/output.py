@@ -48,6 +48,11 @@ class SessionOutput:
         path.write_text(markdown, encoding="utf-8")
         return path
 
+    def save_payloads(self, markdown: str) -> Path:
+        path = self.dir / "payloads.md"
+        path.write_text(markdown, encoding="utf-8")
+        return path
+
     def save_raw(self, tool_name: str, raw_output: str) -> Path:
         path = self.recon_dir / f"{tool_name}.txt"
         path.write_text(raw_output, encoding="utf-8")

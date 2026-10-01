@@ -138,7 +138,7 @@ se enruta a un agente (rol + system prompt + modelo de Ollama):
 | ReconAnalyzer | qwen3:14b | reason_next_steps |
 | CodeAnalyzer | qwen2.5-coder:14b | analyze_response, detect_patterns |
 | ReportWriter | mistral-small3.2:24b | draft_report |
-| PayloadCrafter | dolphin-mixtral:8x7b | craft_payload (inactivo, sin flujo aún) |
+| PayloadCrafter | dolphin-mixtral:8x7b | craft_payload (opt-in, bajo aprobación) |
 
 Modelos configurables por env (`AGENT_*_MODEL`). Si el modelo de un agente no
 está instalado, `LocalLLM` degrada a `OLLAMA_MODEL` (fallback). No reintroducir
@@ -161,7 +161,8 @@ si Qdrant no responde, el cerebro sigue sin contexto (nunca bloquea).
 3. Elegir objetivo (en scope)
 4. Recon por fases          → el agente propone cada tool, usuario aprueba
 5. Análisis con el cerebro  → propone próximos pasos
-6. Reporte conversacional   → output/<target>/<fecha>/report.md
+6. Payloads PoC (opt-in)    → PayloadCrafter genera PoC para hallazgos destacados
+7. Reporte conversacional   → output/<target>/<fecha>/report.md (+ payloads.md)
 ```
 
 ---

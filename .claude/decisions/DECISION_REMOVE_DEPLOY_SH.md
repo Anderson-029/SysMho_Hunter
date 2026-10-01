@@ -1,5 +1,9 @@
 # 🔄 Decisión de Arquitectura: Remover deploy.sh
 
+> ⚠️ **[HISTÓRICO]** — Decisión de la etapa web. El `sysmho_integration.sh` que
+> aquí se recomendaba también fue eliminado después (llamaba a la API FastAPI ya
+> inexistente). Hoy los labs se auditan con el CLI: `sudo python3 hunter.py <IP>`.
+
 **Fecha:** 12 Abril 2026  
 **Autoridad:** Anderson + Claude Code  
 **Status:** ✅ IMPLEMENTADO

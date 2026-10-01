@@ -1,118 +1,79 @@
-# 📋 .claude/rules — Reglas del Proyecto SysMho Hunter
+# 📋 .claude/rules — Reglas del Proyecto SysMho Hunter (CLI)
 
-Esta carpeta contiene las reglas y guías técnicas del proyecto. Están organizadas por tema para fácil referencia.
+Reglas y guías técnicas del proyecto, organizadas por tema.
 
 ## 📁 Estructura
 
 | Archivo | Tema | Usar cuando... |
 |---------|------|------------------|
-| `backend_python.md` | Python, uv, async, BD, PEP8 | Escribas código backend o modifiques estructura Python |
-| `frontend_react.md` | React, TypeScript, Zustand, CSS | Desarrolles frontend o UI components |
-| `security_pentesting.md` | Seguridad, auth, pentesting, scope | Toques autenticación, payloads o operaciones sensibles |
-| `testing_quality.md` | Tests, coverage, validación, debugging | Escribas tests o valides calidad de código |
-| `architecture.md` | Stack, decisiones técnicas, flujos | Necesites entender decisiones de diseño o cómo funcionan los flujos |
+| `backend_python.md` | Python, uv, async, PEP8, estructura CLI | Escribas o modifiques código Python |
+| `security_pentesting.md` | Scope, payloads, aprobación, auditoría | Toques scope, payloads u operaciones sensibles |
+| `testing_quality.md` | Tests, ruff, validación, 6 pilares | Escribas tests o valides calidad |
+| `recon_methodology.md` | Metodología de reconocimiento | Planees o ajustes fases/herramientas de recon |
+| `bug_bounty.md` | Flujo operativo de auditoría | Ejecutes una auditoría end-to-end |
+| `scripts_payloads.md` | Scripts y payloads | Escribas scripts o payloads |
+| `ctf.md` | Técnicas CTF por categoría | Trabajes retos tipo CTF |
 
-## 🎯 5 Pilares Obligatorios
+## 🎯 6 Pilares Obligatorios
 
 Cada línea de código debe cumplir:
-1. **Coherencia** — Código consistente
-2. **Congruencia** — Todo alineado
-3. **Funcionalidad** — Features funcionan exactamente
-4. **Estabilidad** — Cero crashes
-5. **Seguridad Total** — Cero vulnerabilidades
+1. **Coherencia** — código consistente
+2. **Congruencia** — specs ↔ implementación ↔ docs alineados
+3. **Funcionalidad** — features funcionan exactamente
+4. **Estabilidad** — cero crashes, degradación elegante
+5. **Seguridad Total** — scope enforcement, payloads no destructivos
+6. **Escalabilidad** — arquitectura extensible (tools/agentes pluggables)
 
 ## ⚡ Quick Start
 
-### Backend
 ```bash
-cd backend
-uv sync                           # Instalar deps
-uv run ruff check app/           # Validar PEP8
-uv run pytest ../tests/ -v       # Tests
-uv run uvicorn app.main:app --reload
+uv sync                              # instalar deps
+uv run ruff check code/ tests/       # lint
+uv run pytest tests/ -v              # tests
+sudo python3 hunter.py -I            # ejecutar (interactivo)
 ```
 
-### Frontend
-```bash
-cd frontend
-npm install
-npx tsc --noEmit                 # Verificar tipos
-npm run dev
-```
+## 🚀 Servicios (opcionales, para el cerebro completo)
 
-### Validación Pre-Commit
-```bash
-# Backend
-cd backend && uv run ruff check app/ && uv run ruff format app/ && uv run pytest ../tests/ -v
+| Servicio | Puerto | Comando |
+|----------|--------|---------|
+| Ollama (LLM local + agentes) | 11434 | `ollama serve` |
+| Qdrant (RAG) | 6333 | `docker compose up -d qdrant` |
 
-# Frontend
-cd frontend && npx tsc --noEmit && npm run build
-```
-
-## 🚀 Procesos Principales
-
-| Proceso | Puerto | Comando |
-|---------|--------|---------|
-| Backend API | 8000 | `cd backend && uv run uvicorn app.main:app --reload` |
-| Frontend UI | 5173 | `cd frontend && npm run dev` |
-| PostgreSQL | 5432 | `systemctl start postgresql` |
-| Ollama (LLM) | 11434 | `ollama serve` |
+Sin ellos, el cerebro degrada (Gemini / sin RAG) y el CLI sigue funcionando.
 
 ## 📖 Referencia Rápida
 
-### Crear Nuevo Endpoint
-1. Crear modelo en `app/models/`
-2. Crear schema en `app/schemas/`
-3. Crear servicio en `app/services/`
-4. Crear endpoint en `app/api/v1/`
-5. Verificar: PEP8, tipos, auth, tests
+### Agregar una herramienta de recon
+1. Crear `code/recon/tools/nueva_tool.py`
+2. Heredar `BaseTool`, definir `name/binary/phase/risk_level`
+3. Implementar `run(target, scope)` y `parse_output(raw)`
+4. Decorar con `@ToolRegistry.register` (auto-discovery, no se toca el engine)
 
-### Agregar Nueva Dependencia
-```bash
-cd backend
-uv add package-name
-uv sync
-```
+### Agregar un agente del cerebro
+1. Definir `Agent(...)` en `code/brain/agents.py` con rol + modelo + task_types
+2. (opcional) modelo override por env `AGENT_*_MODEL`
 
-### Crear Migración BD
+### Agregar una dependencia
 ```bash
-cd backend
-uv run alembic revision --autogenerate -m "descripcion"
-uv run alembic upgrade head
-```
-
-### Escribir Test
-```bash
-# tests/test_feature.py
-@pytest.mark.asyncio
-async def test_something():
-    ...
+uv add package-name && uv sync
 ```
 
 ## 🔒 Seguridad Primero
 
-- ✅ Validar scope antes de ejecutar herramientas
-- ✅ Secrets en .env (NUNCA en código)
-- ✅ JWT con dual-mode (Bearer + API Key)
+- ✅ Validar scope (`scope.txt`) antes de ejecutar herramientas
+- ✅ Secrets en `.env` (NUNCA en código)
 - ✅ Payloads no destructivos por defecto
-- ✅ Logging de acciones críticas
-- ✅ Aprobar operaciones high-risk explícitamente
-
-## 📊 Métricas de Éxito
-
-- ✅ Coverage: 80% (backend), 70% (frontend)
-- ✅ Latency p95: <500ms
-- ✅ PEP8: PASS (ruff)
-- ✅ TypeScript: 0 errors
-- ✅ Ollama usage: 90%+ para tareas aplicables
+- ✅ El agente propone, el usuario aprueba (riesgo medium+ siempre confirma)
+- ✅ Todo registrado en `session.log`
 
 ## 🤔 ¿Preguntas?
 
-- Revisa `CLAUDE.md` en raíz del proyecto para instrucciones maestras
-- Revisa `PENDIENTES.md` para estado de fases
-- Revisa memoria en `.claude/projects/.../memory/` para contexto de decisiones pasadas
+- `CLAUDE.md` (raíz) — instrucciones maestras
+- `code/brain/AGENTS.md`, `code/recon/AGENTS.md` — detalle por módulo
+- `PENDIENTES.md` — roadmap
+- Memoria en `.claude/projects/.../memory/` — decisiones pasadas
 
 ---
 
-**Última actualización:** 11 Abril 2026  
-**Autoridad:** Anderson (único admin, SysMho Hunter)
+**Última actualización:** 30 Septiembre 2026 (reestructuración a CLI)

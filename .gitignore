@@ -43,3 +43,12 @@ models_local/
 
 # Laboratorios de prueba
 labs/
+
+# MCP local (codebase-memory-mcp): ruta/binario específicos de la máquina
+.mcp.json
+.mcp/
+
+# codebase-memory-mcp (grafo local/export; el store vivo es ~/.cache/codebase-memory-mcp)
+.codebase-memory/
+.mcp.json
+.mcp/

@@ -105,6 +105,7 @@ output/
     └── 20260930_201122/
         ├── findings.json     ← todos los hallazgos estructurados
         ├── report.md         ← reporte conversacional en prosa
+        ├── payloads.md       ← payloads PoC (si pediste craft_payload)
         ├── recon/            ← salida cruda por herramienta
         └── session.log       ← ciclo de vida (JSON: aprobaciones, decisiones)
 ```

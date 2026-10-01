@@ -1,5 +1,9 @@
 # 🔍 Auditoría & Correcciones: integration.sh
 
+> ⚠️ **[HISTÓRICO]** — Describe la etapa web (FastAPI/API REST en localhost:8000)
+> ya eliminada. El proyecto es hoy una herramienta CLI sin servidor ni API.
+> Se conserva como registro; no refleja el código actual.
+
 **Fecha:** 13 Abril 2026  
 **Status:** ✅ ARREGLADO  
 **Validación:** Todos los 5 pilares cumplidos

@@ -15,6 +15,7 @@ from brain.cloud_client import CloudClientError, cloud_client
 from brain.local_llm import LocalLLMError, local_llm
 from brain.ml_engine import ml_engine
 from brain.prompts import (
+    build_payload_prompt,
     build_reason_prompt,
     build_report_prompt,
     rag_block,
@@ -51,7 +52,7 @@ LOCAL_CONFIDENCE_THRESHOLD = 0.70
 # Tareas que el ML puede manejar directamente
 ML_TASKS = {"classify_severity", "score_vuln", "prioritize_targets"}
 # Tareas que siempre necesitan LLM
-LLM_TASKS = {"draft_report", "analyze_response"}
+LLM_TASKS = {"draft_report", "analyze_response", "craft_payload"}
 # Tareas híbridas: ML primero, LLM si confianza baja
 HYBRID_TASKS = {"detect_patterns", "reason_next_steps"}
 
@@ -277,6 +278,13 @@ class BrainRouter:
             return str(input_data.get("body", ""))[:300]
         elif task_type == "detect_patterns":
             return input_data.get("description", "")
+        elif task_type == "craft_payload":
+            finding = input_data.get("finding", {})
+            return (
+                f"{finding.get('type', '')} "
+                f"{finding.get('title', '')} "
+                f"{finding.get('description', '')}"
+            ).strip()
         return ""
 
     def _build_prompt(
@@ -292,6 +300,12 @@ class BrainRouter:
             )
         elif task_type == "draft_report":
             return build_report_prompt(
+                target=input_data.get("target", ""),
+                finding=input_data.get("finding", {}),
+                rag_context=rag_context,
+            )
+        elif task_type == "craft_payload":
+            return build_payload_prompt(
                 target=input_data.get("target", ""),
                 finding=input_data.get("finding", {}),
                 rag_context=rag_context,

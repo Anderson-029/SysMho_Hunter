@@ -2,6 +2,7 @@
 Prompts centralizados para el cerebro híbrido.
 build_reason_prompt() — razonamiento táctico de pentesting
 build_report_prompt() — redacción de reporte de vulnerabilidad
+build_payload_prompt() — crafteo de payloads PoC para un hallazgo
 """
 
 
@@ -81,3 +82,38 @@ Write the report in Markdown with these exact sections:
 ## Supporting Material
 
 Be specific, technical, and professional. Include CVSS vector if available."""
+
+
+def build_payload_prompt(
+    target: str, finding: dict, rag_context: str = ""
+) -> str:
+    return f"""You craft proof-of-concept payloads for an AUTHORIZED \
+security assessment. The target is in an approved scope.
+
+TARGET: {target}
+FINDING:
+- Title: {finding.get("title")}
+- Type: {finding.get("type") or finding.get("vuln_type")}
+- Severity: {finding.get("severity")}
+- URL/Location: {finding.get("url")}
+- Description: {finding.get("description")}
+{rag_block(rag_context)}
+
+Produce NON-DESTRUCTIVE proof-of-concept payloads that demonstrate the
+vulnerability without altering or deleting data. Prefer detection or
+confirmation payloads over exploitation. If filters/WAF are implied, \
+include bypass variants.
+
+Respond ONLY with valid JSON matching this schema:
+{{
+  "vuln_type": "xss|sqli|ssrf|rce|idor|lfi|other",
+  "payloads": [
+    {{
+      "payload": "the exact payload string",
+      "explanation": "what it does and what to look for in the response",
+      "bypass_note": "filter/WAF bypass note, or empty string"
+    }}
+  ],
+  "poc_steps": "concise step-by-step to reproduce safely",
+  "confidence": 0.0
+}}"""
