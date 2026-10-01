@@ -24,7 +24,15 @@ class Settings(BaseSettings):
 
     # Cerebro — Ollama (Nivel 2, LLM local)
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1:8b-instruct-q6_K"
+    # Modelo por defecto / fallback (ligero)
+    ollama_model: str = "llama3.1:8b-instruct-q6_k"
+
+    # Agentes especializados (Nivel 2) — modelo por rol.
+    # Override por env: AGENT_RECON_MODEL, AGENT_CODE_MODEL, etc.
+    agent_recon_model: str = "qwen3:14b"
+    agent_code_model: str = "qwen2.5-coder:14b"
+    agent_report_model: str = "mistral-small3.2:24b-instruct-2506-q4_K_M"
+    agent_payload_model: str = "dolphin-mixtral:8x7b"
 
     # RAG — Qdrant + embeddings
     qdrant_url: str = "http://localhost:6333"

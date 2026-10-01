@@ -126,9 +126,23 @@ bash scripts/check_tools.sh
 
 ```
 Nivel 1: MLEngine (scikit-learn, <10ms)      → classify_severity, score_vuln, prioritize
-Nivel 2: LocalLLM (Llama 3.1 8B, Ollama)     → detect_patterns, reason_next_steps
+Nivel 2: LocalLLM (Ollama, agentes especializados) → detect_patterns, reason_next_steps, ...
 Nivel 3: CloudClient (Gemini 2.0 Flash)      → tareas complejas, fallback
 ```
+
+**Nivel 2 = agentes especializados** (`code/brain/agents.py`): cada `task_type`
+se enruta a un agente (rol + system prompt + modelo de Ollama):
+
+| Agente | Modelo | Tareas |
+|--------|--------|--------|
+| ReconAnalyzer | qwen3:14b | reason_next_steps |
+| CodeAnalyzer | qwen2.5-coder:14b | analyze_response, detect_patterns |
+| ReportWriter | mistral-small3.2:24b | draft_report |
+| PayloadCrafter | dolphin-mixtral:8x7b | craft_payload (inactivo, sin flujo aún) |
+
+Modelos configurables por env (`AGENT_*_MODEL`). Si el modelo de un agente no
+está instalado, `LocalLLM` degrada a `OLLAMA_MODEL` (fallback). No reintroducir
+dependencia de un solo modelo fijo en el Nivel 2.
 
 Umbrales hardcodeados en `code/brain/router.py`:
 - `ML_CONFIDENCE_THRESHOLD = 0.85`

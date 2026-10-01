@@ -1,8 +1,8 @@
 """
 BrainRouter — Orquesta los 3 niveles del cerebro híbrido.
 Nivel 1: MLEngine (scikit-learn, <10ms)
-Nivel 2: LocalLLM (Ollama Llama 3.1 8B Q6_K, ~20-40s)
-Nivel 3: CloudClient (Gemini 2.0 Flash → Claude Haiku, ~1-3s)
+Nivel 2: LocalLLM (Ollama, agentes especializados por tarea, ~10-40s)
+Nivel 3: CloudClient (Gemini 2.0 Flash, ~1-3s)
 """
 
 import json
@@ -10,6 +10,7 @@ import logging
 import time
 from datetime import datetime, timezone
 
+from brain.agents import resolve_agent
 from brain.cloud_client import CloudClientError, cloud_client
 from brain.local_llm import LocalLLMError, local_llm
 from brain.ml_engine import ml_engine
@@ -97,7 +98,16 @@ class BrainRouter:
                     prompt = self._build_prompt(
                         task_type, input_data, rag_context
                     )
-                    llm_result = await local_llm.complete(prompt)
+                    agent = resolve_agent(task_type)
+                    llm_result = await local_llm.complete(
+                        prompt,
+                        model=agent.model if agent else None,
+                        system=agent.system_prompt if agent else None,
+                    )
+                    used_model = llm_result.get("_meta", {}).get(
+                        "model", local_llm.model
+                    )
+                    agent_name = agent.name if agent else "default"
                     confidence = llm_result.get(
                         "confidence", LOCAL_CONFIDENCE_THRESHOLD
                     )
@@ -106,19 +116,20 @@ class BrainRouter:
 
                     if confidence >= LOCAL_CONFIDENCE_THRESHOLD:
                         llm_result["brain_level"] = 2
-                        llm_result["model_used"] = local_llm.model
+                        llm_result["model_used"] = used_model
+                        llm_result["agent"] = agent_name
                         llm_result["confidence"] = confidence
                         total_latency = int((time.monotonic() - start) * 1000)
                         llm_result["total_latency_ms"] = total_latency
                         _log_brain_decision(
                             task_type=task_type,
                             level=2,
-                            model=local_llm.model,
+                            model=used_model,
                             latency_ms=total_latency,
                             confidence=confidence,
                             reason=(
-                                f"Ollama available, confidence "
-                                f"{confidence:.3f}"
+                                f"Agente {agent_name} ({used_model}), "
+                                f"confidence {confidence:.3f}"
                                 f" >= {LOCAL_CONFIDENCE_THRESHOLD}"
                             ),
                         )
