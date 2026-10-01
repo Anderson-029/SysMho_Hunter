@@ -3,7 +3,7 @@
 Ingesta de documentos Markdown en Qdrant (knowledge base RAG).
 
 Uso:
-    cd backend && uv run python ../scripts/ingest_knowledge.py [directorio]
+    uv run python scripts/ingest_knowledge.py [directorio]
 
 Por defecto indexa todo `knowledge/` desde la raíz del proyecto.
 """
@@ -13,10 +13,10 @@ import logging
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "code"))
 
-from app.rag.indexer import index_directory  # noqa: E402
-from app.rag.qdrant_client import qdrant_store  # noqa: E402
+from rag.indexer import index_directory  # noqa: E402
+from rag.qdrant_client import qdrant_store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)

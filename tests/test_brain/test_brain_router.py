@@ -9,9 +9,8 @@ Cubre:
 """
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.brain.router import BrainRouter
+from brain.router import BrainRouter
 
 
 @pytest.fixture
@@ -147,8 +146,12 @@ class TestBrainFallback:
         assert "model_used" in result
         # En caso de error total, retorna "none"
         assert result["model_used"] in (
-            "none", "sklearn", "ollama",
-            "llama3.1:8b-instruct-q6_K", "gemini", "claude"
+            "none",
+            "sklearn",
+            "ollama",
+            "llama3.1:8b-instruct-q6_K",
+            "gemini",
+            "claude",
         )
 
     async def test_confidence_descends_with_fallback(self, brain_router):

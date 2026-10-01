@@ -1,0 +1,46 @@
+[project]
+name = "sysmho-hunter"
+version = "0.4.0"
+description = "Agente autónomo de pentesting (CLI conversacional)"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.10",
+    "google-genai>=1.0",
+    "joblib>=1.4",
+    "numpy>=1.26",
+    "pydantic-settings>=2.0",
+    "qdrant-client>=1.18.0",
+    "scikit-learn>=1.5",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["code"]
+
+[tool.ruff]
+line-length = 79
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# tool_explanations.py es archivo de datos con texto humano (E501 ok)
+"code/recon/tool_explanations.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "brain", "rag", "recon", "core", "cli",
+    "config", "ui_utils", "session_logger",
+]

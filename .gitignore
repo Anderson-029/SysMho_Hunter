@@ -14,11 +14,8 @@ venv/
 .vscode/
 .idea/
 
-# Frontend
-frontend/node_modules/
-frontend/dist/
-
-# Scans & Results
+# Resultados de sesiones (evidencia local, no versionar)
+output/
 scans/
 reports/
 *.xml
@@ -31,9 +28,6 @@ Thumbs.db
 # SysMho Hunter Runtime
 logs/
 .pids/
-
-# uv (lock file should be committed, like package-lock.json)
-backend/.venv/
 
 # ML models (grandes, no versionar)
 ml/models/*.pkl
